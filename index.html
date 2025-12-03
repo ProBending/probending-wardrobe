@@ -1,6 +1,8 @@
 <script>
   // Run after DOM is ready
   document.addEventListener("DOMContentLoaded", () => {
+    console.log("Probending Wardrobe Script v4 Loaded");
+
     // ====== DOM ELEMENTS ======
     const canvas = document.getElementById("skinCanvas"); // hidden 2D canvas
     const ctx = canvas.getContext("2d");
@@ -42,7 +44,15 @@
     function update3DPreview() {
       if (!baseSkinImg) return;
 
-      const dataUrl = canvas.toDataURL();
+      let dataUrl;
+      try {
+        dataUrl = canvas.toDataURL();
+      } catch (e) {
+        console.error(e);
+        setStatus("Browser blocked preview (security). Make sure you're using the GitHub Pages URL, not file://");
+        return;
+      }
+
       const combinedImg = new Image();
       combinedImg.onload = () => {
         viewer.loadSkin(combinedImg.src, {
@@ -53,7 +63,7 @@
       combinedImg.src = dataUrl;
     }
 
-    // ====== DRAW ON 2D CANVAS (with outer layer cleared) ======
+    // ====== DRAW ON 2D CANVAS (wipe second layer below head) ======
     function renderCanvas() {
       if (!baseSkinImg) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -71,42 +81,10 @@
       // 1) Draw base skin
       ctx.drawImage(baseSkinImg, 0, 0, canvas.width, canvas.height);
 
-      // 2) Clear original outer clothing layer (jacket/sleeves/legs)
-      // Coords assume standard 64x64 Java skin layout.
-
-      // --- Upper outer layer (Y = 36 to 48) ---
-      // Body outer (jacket)
-      ctx.clearRect(16, 36, 12, 12);
-
-      // Right arm outer
-      ctx.clearRect(40, 36, 8, 12);
-
-      // Left arm outer
-      ctx.clearRect(48, 36, 8, 12);
-
-      // Right leg outer
-      ctx.clearRect(0, 36, 8, 12);
-
-      // Left leg outer
-      ctx.clearRect(8, 36, 8, 12);
-
-      // --- Lower outer layer (mirrored limbs at bottom of texture, Y = 52 to 64) ---
-      // Body outer (jacket bottom copy)
-      ctx.clearRect(16, 52, 12, 12);
-
-      // Right arm outer (bottom copy)
-      ctx.clearRect(40, 52, 8, 12);
-
-      // Left arm outer (bottom copy)
-      ctx.clearRect(48, 52, 8, 12);
-
-      // Right leg outer (bottom copy)
-      ctx.clearRect(0, 52, 8, 12);
-
-      // Left leg outer (bottom copy)
-      ctx.clearRect(8, 52, 8, 12);
-
-      // (We intentionally do NOT clear the head hat layer, so hair/hats still show.)
+      // 2) Wipe lower half (y >= 32) to remove all body/arms/legs overlays
+      //    In 64x64 format, the **outer clothing + extra limb textures**
+      //    live in the bottom 32px. We keep the head layers (y < 32).
+      ctx.clearRect(0, 32, canvas.width, canvas.height - 32);
 
       // 3) Draw probending outfit overlay on top
       if (outfitImg) {
@@ -231,7 +209,14 @@
     downloadBtn.addEventListener("click", () => {
       if (!baseSkinImg) return;
 
-      const dataUrl = canvas.toDataURL("image/png");
+      let dataUrl;
+      try {
+        dataUrl = canvas.toDataURL("image/png");
+      } catch (e) {
+        console.error(e);
+        setStatus("Browser blocked download (security). Make sure you're using the GitHub Pages URL, not file://");
+        return;
+      }
 
       const link = document.createElement("a");
       link.download = "probending_skin.png";
