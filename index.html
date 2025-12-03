@@ -5,236 +5,338 @@
   <title>Probending Wardrobe</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
+  <!-- 3D Skin Viewer -->
   <script src="https://unpkg.com/skinview3d/bundles/skinview3d.bundle.js"></script>
 
   <style>
-    :root {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-
-    * { box-sizing: border-box; }
-
     body {
       margin: 0;
-      min-height: 100vh;
+      background: #0b0e1a;
+      font-family: system-ui, sans-serif;
+      color: #eee;
       display: flex;
-      align-items: center;
       justify-content: center;
-      background: radial-gradient(circle at top, #1b2735, #090a0f);
-      color: #f9fafb;
+      padding: 20px;
     }
 
     .app {
       width: 100%;
-      max-width: 980px;
-      background: rgba(15, 23, 42, 0.96);
-      border-radius: 18px;
-      padding: 22px 26px 26px;
+      max-width: 1000px;
       display: grid;
-      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      grid-template-columns: 1.1fr 1fr;
       gap: 20px;
     }
 
-    .card-section {
-      background: rgba(15, 23, 42, 0.85);
-      border-radius: 14px;
-      padding: 14px;
-      border: 1px solid rgba(148, 163, 184, 0.25);
+    .card {
+      background: #151a28;
+      padding: 16px;
+      border-radius: 10px;
+      border: 1px solid #2a3147;
+    }
+
+    h2 {
+      margin-top: 0;
+    }
+
+    label {
+      display: block;
+      margin: 6px 0 2px;
+    }
+
+    input[type="file"],
+    input[type="text"] {
+      width: 100%;
+      padding: 6px;
+      border-radius: 6px;
+      border: 1px solid #333a50;
+      background: #0e1320;
+      color: white;
+    }
+
+    button {
+      padding: 8px 12px;
+      background: #3b82f6;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      color: white;
+      margin-top: 10px;
+    }
+
+    .outfit-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .outfit-btn {
+      background: #22283a;
+      border: 1px solid #3b4055;
+      padding: 8px;
+      border-radius: 6px;
+      color: white;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .outfit-btn.active {
+      background: #16a34a;
+      border-color: #16a34a;
+    }
+
+    .viewer-bg {
+      background: #0e1320;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #2a3147;
     }
 
     #skin3d {
       width: 100%;
-      height: 360px;
-      background: transparent;
-      display: block;
+      height: 380px;
     }
 
-    .viewer-bg {
-      border-radius: 14px;
-      padding: 10px;
-      background-size: cover;
-      background-position: center;
-      border: 1px solid rgba(148,163,184,0.5);
+    .toggle-row {
+      margin-top: 12px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .toggle-btn {
+      flex: 1;
+      background: #22283a;
+      border: 1px solid #3b4055;
+      padding: 8px;
+      text-align: center;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+
+    .toggle-btn.active {
+      background: #16a34a;
+      border-color: #16a34a;
+      color: white;
+    }
+
+    #statusText {
+      margin-top: 8px;
+      color: #9ca3af;
     }
   </style>
 </head>
 
 <body>
-  <main class="app">
 
-    <!-- LEFT SIDE OMITTED FOR BREVITY, YOU KEEP YOUR EXISTING LEFT PANEL -->
+<div class="app">
 
-    <!-- RIGHT SIDE PREVIEW PANEL -->
-    <section class="card-section">
-      <div class="section-title">3 · Preview & Download</div>
+  <!-- LEFT PANEL -->
+  <div class="card">
+    <h2>Load Skin</h2>
 
-      <div class="viewer-bg">
-        <canvas id="skin3d"></canvas>
-      </div>
+    <!-- Upload -->
+    <label>Upload Skin (.png)</label>
+    <input type="file" id="skinFile" accept="image/png">
 
-      <!-- 🔥 THIS WAS MISSING — RE-ADDED -->
-      <canvas id="skinCanvas" width="64" height="64" style="display:none;"></canvas>
+    <label style="margin-top:12px;">Or Load by Username</label>
+    <input type="text" id="usernameInput" placeholder="Minecraft username">
+    <button id="loadUsernameBtn">Load Username Skin</button>
 
-      <div id="statusText" class="status">Load a skin to get started.</div>
+    <h2 style="margin-top:20px;">Choose Probending Outfit</h2>
+    <div class="outfit-grid">
+      <div class="outfit-btn" data-outfit="outfits/red_team.png">Red</div>
+      <div class="outfit-btn" data-outfit="outfits/blue_team.png">Blue</div>
+      <div class="outfit-btn" data-outfit="outfits/red_slim.png">Red (Slim)</div>
+      <div class="outfit-btn" data-outfit="outfits/blue_slim.png">Blue (Slim)</div>
+    </div>
 
-      <button id="downloadBtn" disabled>Download Combined Skin</button>
-    </section>
+    <h2 style="margin-top:20px;">Model Type</h2>
+    <div class="toggle-row">
+      <div class="toggle-btn active" data-model="default">Steve</div>
+      <div class="toggle-btn" data-model="slim">Slim (Alex)</div>
+    </div>
 
-  </main>
+  </div>
 
-  <!-- 🔥 YOUR SCRIPT BLOCK (unchanged except for working v5) -->
-  <script>
-  document.addEventListener("DOMContentLoaded", () => {
-    console.log("Probending Wardrobe Script – SAFE v5 Loaded");
+  <!-- RIGHT PANEL -->
+  <div class="card">
+    <h2>Preview & Download</h2>
+    <div class="viewer-bg">
+      <canvas id="skin3d"></canvas>
+    </div>
 
-    const canvas = document.getElementById("skinCanvas");
-    const ctx = canvas.getContext("2d");
+    <!-- Hidden canvas for generating final skin -->
+    <canvas id="skinCanvas" width="64" height="64" style="display:none;"></canvas>
 
-    const skin3dCanvas = document.getElementById("skin3d");
-    const statusText = document.getElementById("statusText");
-    const downloadBtn = document.getElementById("downloadBtn");
+    <div id="statusText">Load a skin to begin.</div>
 
-    const skinFileInput = document.getElementById("skinFile");
-    const usernameInput = document.getElementById("usernameInput");
-    const loadUsernameBtn = document.getElementById("loadUsernameBtn");
+    <button id="downloadBtn" disabled>Download Skin</button>
+  </div>
 
-    const outfitButtons = Array.from(document.querySelectorAll(".outfit-btn"));
-    const modelButtons = Array.from(document.querySelectorAll(".pill-btn"));
+</div>
 
-    let baseSkinImg = null;
-    let outfitImg = null;
-    let currentModel = "default";
 
-    function setStatus(msg) { statusText.textContent = msg; }
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("Probending Wardrobe Final Build Loaded");
 
-    const viewer = new skinview3d.SkinViewer({
-      canvas: skin3dCanvas,
-      width: 300,
-      height: 360,
-      zoom: 0.9
-    });
+  const canvas = document.getElementById("skinCanvas");
+  const ctx = canvas.getContext("2d");
 
-    viewer.autoRotate = true;
-    viewer.autoRotateSpeed = 0.6;
+  const statusText = document.getElementById("statusText");
+  const downloadBtn = document.getElementById("downloadBtn");
 
-    function update3DPreview() {
-      if (!baseSkinImg) return;
+  const outfitButtons = [...document.querySelectorAll(".outfit-btn")];
+  const modelButtons  = [...document.querySelectorAll(".toggle-btn")];
 
-      let url;
-      try { url = canvas.toDataURL(); }
-      catch (e) {
-        setStatus("Security error – use GitHub Pages URL.");
-        return;
-      }
+  const skin3dCanvas = document.getElementById("skin3d");
 
-      const img = new Image();
-      img.onload = () => viewer.loadSkin(img.src, { model: currentModel });
-      img.src = url;
-    }
+  let baseSkinImg = null;
+  let outfitImg = null;
+  let currentModel = "default";
 
-    function clearOuterLayers() {
-      // Upper outer layers
-      ctx.clearRect(16,36,24,12);
-      ctx.clearRect(40,36,8,12);
-      ctx.clearRect(48,36,8,12);
-      ctx.clearRect(0,36,8,12);
-      ctx.clearRect(8,36,8,12);
+  function setStatus(msg) {
+    statusText.textContent = msg;
+  }
 
-      // Lower outer layers
-      ctx.clearRect(16,52,24,12);
-      ctx.clearRect(40,52,8,12);
-      ctx.clearRect(48,52,8,12);
-      ctx.clearRect(0,52,8,12);
-      ctx.clearRect(8,52,8,12);
-    }
-
-    function renderCanvas() {
-      if (!baseSkinImg) {
-        ctx.clearRect(0,0,canvas.width,canvas.height);
-        setStatus("Load a skin to begin.");
-        downloadBtn.disabled = true;
-        return;
-      }
-
-      canvas.width = baseSkinImg.width;
-      canvas.height = baseSkinImg.height;
-
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      ctx.drawImage(baseSkinImg,0,0);
-
-      clearOuterLayers();
-
-      if (outfitImg) ctx.drawImage(outfitImg,0,0);
-
-      downloadBtn.disabled = false;
-      update3DPreview();
-    }
-
-    // File upload
-    skinFileInput?.addEventListener("change", e => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = ev => {
-        const img = new Image();
-        img.onload = () => { baseSkinImg = img; renderCanvas(); };
-        img.src = ev.target.result;
-      };
-      reader.readAsDataURL(file);
-    });
-
-    // Username
-    loadUsernameBtn?.addEventListener("click", () => {
-      const name = usernameInput.value.trim();
-      if (!name) return;
-
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = () => { baseSkinImg = img; renderCanvas(); };
-      img.src = "https://minotar.net/skin/" + encodeURIComponent(name);
-    });
-
-    // Outfits
-    outfitButtons.forEach(btn => {
-      btn.addEventListener("click", () => {
-        outfitButtons.forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-
-        if (!btn.dataset.outfit) {
-          outfitImg = null;
-          renderCanvas();
-          return;
-        }
-
-        const img = new Image();
-        img.onload = () => { outfitImg = img; renderCanvas(); };
-        img.src = btn.dataset.outfit;
-      });
-    });
-
-    // Model toggle
-    modelButtons.forEach(btn => {
-      btn.addEventListener("click", () => {
-        modelButtons.forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        currentModel = btn.dataset.model;
-        update3DPreview();
-      });
-    });
-
-    downloadBtn.addEventListener("click", () => {
-      let url;
-      try { url = canvas.toDataURL("image/png"); }
-      catch (e) { setStatus("Security error."); return; }
-
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "probending_skin.png";
-      a.click();
-    });
-
+  /* -------------------------------
+     3D VIEWER
+  --------------------------------*/
+  const viewer = new skinview3d.SkinViewer({
+    canvas: skin3dCanvas,
+    width: 300,
+    height: 380,
+    zoom: 0.9
   });
-  </script>
+  viewer.autoRotate = true;
+  viewer.autoRotateSpeed = 0.6;
+
+
+  /* -------------------------------
+     UPDATE 3D MODEL
+  --------------------------------*/
+  function update3D() {
+    if (!baseSkinImg) return;
+
+    let url = canvas.toDataURL();
+    const img = new Image();
+    img.onload = () => {
+      viewer.loadSkin(url, { model: currentModel });
+    };
+    img.src = url;
+  }
+
+
+  /* -------------------------------
+     REMOVE OUTER CLOTHING LAYER
+  --------------------------------*/
+  function clearOuterLayers() {
+    ctx.clearRect(16,36,24,12);
+    ctx.clearRect(40,36,8,12);
+    ctx.clearRect(48,36,8,12);
+    ctx.clearRect(0,36,8,12);
+    ctx.clearRect(8,36,8,12);
+
+    ctx.clearRect(16,52,24,12);
+    ctx.clearRect(40,52,8,12);
+    ctx.clearRect(48,52,8,12);
+    ctx.clearRect(0,52,8,12);
+    ctx.clearRect(8,52,8,12);
+  }
+
+
+  /* -------------------------------
+     RENDER FINAL COMPOSITE
+  --------------------------------*/
+  function renderCanvas() {
+    if (!baseSkinImg) return;
+
+    canvas.width = baseSkinImg.width;
+    canvas.height = baseSkinImg.height;
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(baseSkinImg,0,0);
+
+    clearOuterLayers();
+
+    if (outfitImg) ctx.drawImage(outfitImg,0,0);
+
+    update3D();
+    downloadBtn.disabled = false;
+    setStatus("Skin ready. Download when satisfied.");
+  }
+
+
+  /* -------------------------------
+     LOAD SKIN FROM UPLOAD
+  --------------------------------*/
+  document.getElementById("skinFile").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = new Image();
+      img.onload = () => { baseSkinImg = img; renderCanvas(); };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+
+  /* -------------------------------
+     LOAD BY USERNAME
+  --------------------------------*/
+  document.getElementById("loadUsernameBtn").addEventListener("click", () => {
+    const name = document.getElementById("usernameInput").value.trim();
+    if (!name) return;
+
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => { baseSkinImg = img; renderCanvas(); };
+    img.src = "https://minotar.net/skin/" + encodeURIComponent(name);
+  });
+
+
+  /* -------------------------------
+     OUTFIT BUTTONS
+  --------------------------------*/
+  outfitButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      outfitButtons.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      const path = btn.dataset.outfit;
+      const img = new Image();
+      img.onload = () => { outfitImg = img; renderCanvas(); };
+      img.src = path;
+    });
+  });
+
+
+  /* -------------------------------
+     MODEL TOGGLE
+  --------------------------------*/
+  modelButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      modelButtons.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentModel = btn.dataset.model;
+      update3D();
+    });
+  });
+
+
+  /* -------------------------------
+     DOWNLOAD BUTTON
+  --------------------------------*/
+  downloadBtn.addEventListener("click", () => {
+    const a = document.createElement("a");
+    a.href = canvas.toDataURL("image/png");
+    a.download = "probending_skin.png";
+    a.click();
+  });
+
+});
+</script>
 
 </body>
 </html>
