@@ -1,0 +1,169 @@
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("Probending Wardrobe – Base Outer-Layer Wipe Build Loaded");
+
+  const canvas = document.getElementById("skinCanvas");
+  if (!canvas) {
+    console.error("ERROR: #skinCanvas element not found. Make sure <canvas id='skinCanvas'> exists in your HTML.");
+    return;
+  }
+  const ctx = canvas.getContext("2d");
+
+  const statusText  = document.getElementById("statusText");
+  const downloadBtn = document.getElementById("downloadBtn");
+
+  const outfitButtons = Array.from(document.querySelectorAll(".outfit-btn"));
+  const modelButtons  = Array.from(document.querySelectorAll(".toggle-btn"));
+
+  const skin3dCanvas = document.getElementById("skin3d");
+
+  let baseSkinImg  = null;
+  let outfitImg    = null;
+  let currentModel = "default";
+
+  // --- 3D VIEWER ---
+  let viewer;
+  try {
+    viewer = new skinview3d.SkinViewer({
+      canvas: skin3dCanvas,
+      width: skin3dCanvas.clientWidth || 300,
+      height: skin3dCanvas.clientHeight || 380,
+      zoom: 0.9
+    });
+    viewer.autoRotate = true;
+  } catch (err) {
+    console.error("SkinViewer initialization failed", err);
+    if (statusText) statusText.textContent = "Error loading 3D viewer.";
+    return;
+  }
+
+  // --- REMOVE torso / legs / arms (base + outer layer) ---
+  function clearOuterLayer() {
+    // BODY (base + outer)
+    ctx.clearRect(16, 16, 24, 32);
+
+    // RIGHT ARM (base + outer)
+    ctx.clearRect(40, 16, 16, 32);
+
+    // LEFT ARM (base + outer)
+    ctx.clearRect(32, 48, 16, 16);
+    ctx.clearRect(48, 48, 16, 16);
+
+    // RIGHT LEG (base + outer)
+    ctx.clearRect(0, 16, 16, 32);
+
+    // LEFT LEG (base + outer)
+    ctx.clearRect(16, 48, 16, 16);
+    ctx.clearRect(0, 48, 16, 16);
+  }
+
+  // --- RENDER CANVAS ---
+  function renderCanvas() {
+    if (!baseSkinImg) return;
+
+    canvas.width = 64;
+    canvas.height = 64;
+
+    ctx.clearRect(0, 0, 64, 64);
+
+    // 1) Draw base skin
+    ctx.drawImage(baseSkinImg, 0, 0);
+
+    // 2) Remove torso/arms/legs
+    clearOuterLayer();
+
+    // 3) Draw outfit
+    if (outfitImg) ctx.drawImage(outfitImg, 0, 0);
+
+    // 4) Update 3D viewer
+    viewer.loadSkin(canvas.toDataURL("image/png"), { model: currentModel });
+
+    // 5) Update UI
+    if (downloadBtn) downloadBtn.disabled = false;
+    if (statusText) statusText.textContent = "Outfit applied — ready to download!";
+  }
+
+  // --- FILE UPLOAD ---
+  const fileInput = document.getElementById("skinFile");
+  if (fileInput) {
+    fileInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => {
+          baseSkinImg = img;
+          if (statusText) statusText.textContent = "Skin loaded — choose an outfit.";
+          renderCanvas();
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // --- LOAD BY USERNAME ---
+  const usernameBtn = document.getElementById("loadUsernameBtn");
+  if (usernameBtn) {
+    usernameBtn.addEventListener("click", () => {
+      const input = document.getElementById("usernameInput");
+      const name = input?.value.trim();
+      if (!name) return;
+
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        baseSkinImg = img;
+        if (statusText) statusText.textContent = "Skin loaded — choose an outfit.";
+        renderCanvas();
+      };
+      img.src = "https://minotar.net/skin/" + encodeURIComponent(name);
+    });
+  }
+
+  // --- OUTFIT SELECTION ---
+  outfitButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      outfitButtons.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      const src = btn.dataset.outfit;
+      if (!src) return;
+
+      const img = new Image();
+      img.onload = () => {
+        outfitImg = img;
+        renderCanvas();
+      };
+      img.src = src;
+    });
+  });
+
+  // --- MODEL TOGGLE (Steve / Slim) ---
+  modelButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      modelButtons.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      currentModel = btn.dataset.model || "default";
+
+      if (baseSkinImg) {
+        viewer.loadSkin(canvas.toDataURL("image/png"), { model: currentModel });
+      }
+    });
+  });
+
+  // --- DOWNLOAD ---
+  if (downloadBtn) {
+    downloadBtn.addEventListener("click", () => {
+      if (!baseSkinImg) return;
+      const a = document.createElement("a");
+      a.href = canvas.toDataURL("image/png");
+      a.download = "probending_skin.png";
+      a.click();
+    });
+  }
+});
+</script>
