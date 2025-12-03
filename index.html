@@ -1,6 +1,6 @@
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("Probending Wardrobe – CLEAN RESTART BUILD");
+  console.log("Probending Wardrobe – Base Outer-Layer Wipe Build Loaded");
 
   const canvas = document.getElementById("skinCanvas");
   const ctx = canvas.getContext("2d");
@@ -13,8 +13,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const skin3dCanvas = document.getElementById("skin3d");
 
-  let baseSkinImg = null;
-  let outfitImg   = null;
+  let baseSkinImg  = null;
+  let outfitImg    = null;
   let currentModel = "default";
 
   // --- 3D VIEWER SETUP ---
@@ -35,18 +35,35 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
-  // --- BASE SECOND LAYER WIPE (TORSO + ARMS + LEGS) ---
+  // --- HARD-WIPE: remove torso/arms/legs (base + outer layers) ---
+  // Coords for standard 64x64 layout
   function clearOuterLayer() {
-    // Torso outer layer (24x16 at 16,32)
-    ctx.clearRect(16, 32, 24, 16);
+    // BODY (both layers)
+    // Base body:  (16,16) size 24x16
+    // Outer body: (16,32) size 24x16
+    ctx.clearRect(16, 16, 24, 32);
 
-    // Arms outer layers (16x16)
-    ctx.clearRect(40, 32, 16, 16); // Right arm outer
-    ctx.clearRect(32, 48, 16, 16); // Left arm outer
+    // RIGHT ARM (base + outer)
+    // Base:  (40,16) 16x16
+    // Outer: (40,32) 16x16
+    ctx.clearRect(40, 16, 16, 32);
 
-    // Legs outer layers (16x16)
-    ctx.clearRect(0,  32, 16, 16); // Right leg outer
-    ctx.clearRect(16, 48, 16, 16); // Left leg outer
+    // LEFT ARM (base + outer) – 1.8+ layout
+    // Base:  (32,48) 16x16
+    // Outer: (48,48) 16x16
+    ctx.clearRect(32, 48, 16, 16);
+    ctx.clearRect(48, 48, 16, 16);
+
+    // RIGHT LEG (base + outer)
+    // Base:  (0,16) 16x16
+    // Outer: (0,32) 16x16
+    ctx.clearRect(0, 16, 16, 32);
+
+    // LEFT LEG (base + outer)
+    // Base:  (16,48) 16x16
+    // Outer: (0,48) 16x16
+    ctx.clearRect(16, 48, 16, 16);
+    ctx.clearRect(0, 48, 16, 16);
   }
 
   // --- MAIN RENDER PIPELINE ---
@@ -60,7 +77,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.clearRect(0, 0, 64, 64);
     ctx.drawImage(baseSkinImg, 0, 0);
 
-    // 2) remove base second-layer bits
+    // 2) nuke torso/arms/legs from base skin
     clearOuterLayer();
 
     // 3) draw outfit overlay
@@ -152,7 +169,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       currentModel = btn.dataset.model || "default";
 
-      // Only reload model if we already have a skin texture
       if (baseSkinImg) {
         viewer.loadSkin(canvas.toDataURL("image/png"), { model: currentModel });
       }
