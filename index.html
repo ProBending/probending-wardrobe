@@ -3,6 +3,10 @@ document.addEventListener("DOMContentLoaded", () => {
   console.log("Probending Wardrobe – Base Outer-Layer Wipe Build Loaded");
 
   const canvas = document.getElementById("skinCanvas");
+  if (!canvas) {
+    console.error("ERROR: #skinCanvas element not found. Make sure <canvas id=\"skinCanvas\"> exists in the HTML.");
+    return; // Stop here instead of crashing
+  }
   const ctx = canvas.getContext("2d");
 
   const statusText  = document.getElementById("statusText");
@@ -89,7 +93,7 @@ document.addEventListener("DOMContentLoaded", () => {
     viewer.loadSkin(canvas.toDataURL("image/png"), { model: currentModel });
 
     // 5) UI
-    downloadBtn.disabled = false;
+    if (downloadBtn) downloadBtn.disabled = false;
     if (statusText) {
       statusText.textContent = "Outfit applied. You can download your probending skin.";
     }
@@ -176,13 +180,15 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // --- DOWNLOAD ---
-  downloadBtn.addEventListener("click", () => {
-    if (!baseSkinImg) return;
+  if (downloadBtn) {
+    downloadBtn.addEventListener("click", () => {
+      if (!baseSkinImg) return;
 
-    const a = document.createElement("a");
-    a.href = canvas.toDataURL("image/png");
-    a.download = "probending_skin.png";
-    a.click();
-  });
+      const a = document.createElement("a");
+      a.href = canvas.toDataURL("image/png");
+      a.download = "probending_skin.png";
+      a.click();
+    });
+  }
 });
 </script>
