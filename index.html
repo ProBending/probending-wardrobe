@@ -1,146 +1,149 @@
 <script>
-  // Run after DOM is ready
-  document.addEventListener("DOMContentLoaded", () => {
-    console.log("Probending Wardrobe Script v4 Loaded");
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("Probending Wardrobe Script – SAFE v5 Loaded");
 
-    // ====== DOM ELEMENTS ======
-    const canvas = document.getElementById("skinCanvas"); // hidden 2D canvas
-    const ctx = canvas.getContext("2d");
+  const canvas = document.getElementById("skinCanvas");
+  const ctx = canvas.getContext("2d");
 
-    const statusText = document.getElementById("statusText");
-    const downloadBtn = document.getElementById("downloadBtn");
+  const skin3dCanvas = document.getElementById("skin3d");
+  const statusText = document.getElementById("statusText");
+  const downloadBtn = document.getElementById("downloadBtn");
 
-    const skinFileInput = document.getElementById("skinFile");
-    const usernameInput = document.getElementById("usernameInput");
-    const loadUsernameBtn = document.getElementById("loadUsernameBtn");
+  const skinFileInput = document.getElementById("skinFile");
+  const usernameInput = document.getElementById("usernameInput");
+  const loadUsernameBtn = document.getElementById("loadUsernameBtn");
 
-    const outfitButtons = Array.from(document.querySelectorAll(".outfit-btn"));
-    const modelButtons = Array.from(document.querySelectorAll(".pill-btn"));
+  const outfitButtons = Array.from(document.querySelectorAll(".outfit-btn"));
+  const modelButtons = Array.from(document.querySelectorAll(".pill-btn"));
 
-    const skin3dCanvas = document.getElementById("skin3d");
+  let baseSkinImg = null;
+  let outfitImg = null;
+  let currentModel = "default";
 
-    // ====== STATE ======
-    let baseSkinImg = null;
-    let outfitImg = null;
-    let currentModel = "default"; // "default" (Steve) or "slim" (Alex)
+  function setStatus(msg) {
+    statusText.textContent = msg;
+  }
 
-    function setStatus(msg) {
-      statusText.textContent = msg;
+  // 3D Viewer
+  const viewer = new skinview3d.SkinViewer({
+    canvas: skin3dCanvas,
+    width: 300,
+    height: 360,
+    zoom: 0.9
+  });
+
+  viewer.autoRotate = true;
+  viewer.autoRotateSpeed = 0.6;
+
+  function update3DPreview() {
+    if (!baseSkinImg) return;
+
+    let dataURL;
+    try {
+      dataURL = canvas.toDataURL();
+    } catch (err) {
+      console.error(err);
+      setStatus("Security error – make sure you're using GitHub Pages URL, not a file:// link.");
+      return;
     }
 
-    // ====== 3D VIEWER SETUP ======
-    const viewer = new skinview3d.SkinViewer({
-      canvas: skin3dCanvas,
-      width: 300,
-      height: 360,
-      zoom: 0.9
-    });
+    const tempImg = new Image();
+    tempImg.onload = () => {
+      viewer.loadSkin(tempImg.src, {
+        model: currentModel === "slim" ? "slim" : "default"
+      });
+    };
+    tempImg.src = dataURL;
+  }
 
-    // auto 360° spin
-    viewer.autoRotate = true;
-    viewer.autoRotateSpeed = 0.6;
+  // ---- SAFE OUTER-LAYER REMOVAL ----
+  // This clears ONLY the jacket/sleeves/pants overlays (correct vanilla positions)
+  function clearOuterLayers() {
+    // UPPER BODY OUTER LAYER (front, back, sides)
+    ctx.clearRect(16, 36, 24, 12);  // torso outer
+    // ARMS OUTER
+    ctx.clearRect(40, 36, 8, 12);   // right arm outer
+    ctx.clearRect(48, 36, 8, 12);   // left arm outer
+    // LEGS OUTER
+    ctx.clearRect(0, 36, 8, 12);    // right leg outer
+    ctx.clearRect(8, 36, 8, 12);    // left leg outer
 
-    // ====== UPDATE 3D MODEL ======
-    function update3DPreview() {
-      if (!baseSkinImg) return;
+    // MIRRORED LOWER OUTER LAYER
+    ctx.clearRect(16, 52, 24, 12);  // torso outer (bottom copy)
+    ctx.clearRect(40, 52, 8, 12);
+    ctx.clearRect(48, 52, 8, 12);
+    ctx.clearRect(0, 52, 8, 12);
+    ctx.clearRect(8, 52, 8, 12);
+  }
 
-      let dataUrl;
-      try {
-        dataUrl = canvas.toDataURL();
-      } catch (e) {
-        console.error(e);
-        setStatus("Browser blocked preview (security). Make sure you're using the GitHub Pages URL, not file://");
-        return;
-      }
-
-      const combinedImg = new Image();
-      combinedImg.onload = () => {
-        viewer.loadSkin(combinedImg.src, {
-          model: currentModel === "slim" ? "slim" : "default"
-        });
-      };
-
-      combinedImg.src = dataUrl;
-    }
-
-    // ====== DRAW ON 2D CANVAS (wipe second layer below head) ======
-    function renderCanvas() {
-      if (!baseSkinImg) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        setStatus("Load a skin to get started.");
-        downloadBtn.disabled = true;
-        return;
-      }
-
-      // Resize canvas to match skin
-      canvas.width = baseSkinImg.width;
-      canvas.height = baseSkinImg.height;
-
+  // ---- RENDER SKIN + OUTFIT ----
+  function renderCanvas() {
+    if (!baseSkinImg) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // 1) Draw base skin
-      ctx.drawImage(baseSkinImg, 0, 0, canvas.width, canvas.height);
-
-      // 2) Wipe lower half (y >= 32) to remove all body/arms/legs overlays
-      //    In 64x64 format, the **outer clothing + extra limb textures**
-      //    live in the bottom 32px. We keep the head layers (y < 32).
-      ctx.clearRect(0, 32, canvas.width, canvas.height - 32);
-
-      // 3) Draw probending outfit overlay on top
-      if (outfitImg) {
-        ctx.drawImage(outfitImg, 0, 0, canvas.width, canvas.height);
-        setStatus("Skin + outfit ready. Click download to save.");
-      } else {
-        setStatus("Skin loaded. Select an outfit or download as-is.");
-      }
-
-      downloadBtn.disabled = false;
-
-      // 4) Update the 3D preview
-      update3DPreview();
+      downloadBtn.disabled = true;
+      setStatus("Load a skin to get started.");
+      return;
     }
 
-    // ====== LOAD SKIN FROM FILE ======
-    function loadSkinFromFile(file) {
-      if (!file) return;
+    canvas.width = baseSkinImg.width;
+    canvas.height = baseSkinImg.height;
 
-      const reader = new FileReader();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(baseSkinImg, 0, 0);
 
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          baseSkinImg = img;
-          renderCanvas();
-        };
-        img.onerror = () => setStatus("Could not read that skin file.");
-        img.src = e.target.result;
-      };
+    // REMOVE original outer clothing
+    clearOuterLayers();
 
-      reader.readAsDataURL(file);
-      setStatus("Loading skin from file...");
+    if (outfitImg) {
+      ctx.drawImage(outfitImg, 0, 0);
+      setStatus("Skin + outfit ready.");
+    } else {
+      setStatus("Skin loaded. Select an outfit.");
     }
 
-    // ====== LOAD SKIN FROM USERNAME ======
-    function loadSkinFromUsername(username) {
-      if (!username) return;
+    downloadBtn.disabled = false;
+    update3DPreview();
+  }
 
+  // ---- LOAD SKIN FILE ----
+  skinFileInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
       const img = new Image();
-      img.crossOrigin = "anonymous";
-
       img.onload = () => {
         baseSkinImg = img;
         renderCanvas();
       };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
 
-      img.onerror = () => setStatus("Could not load skin for that username.");
+  // ---- LOAD SKIN BY USERNAME ----
+  loadUsernameBtn.addEventListener("click", () => {
+    const name = usernameInput.value.trim();
+    if (!name) return;
 
-      img.src = "https://minotar.net/skin/" + encodeURIComponent(username.trim());
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      baseSkinImg = img;
+      renderCanvas();
+    };
+    img.onerror = () => setStatus("Could not load username skin.");
+    img.src = "https://minotar.net/skin/" + encodeURIComponent(name);
+  });
 
-      setStatus("Fetching skin for " + username + "...");
-    }
+  // ---- OUTFIT SELECTION ----
+  outfitButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      outfitButtons.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
 
-    // ====== LOAD OUTFIT OVERLAY ======
-    function loadOutfit(path) {
+      const path = btn.dataset.outfit;
       if (!path) {
         outfitImg = null;
         renderCanvas();
@@ -152,82 +155,40 @@
         outfitImg = img;
         renderCanvas();
       };
-      img.onerror = () => setStatus("Could not load outfit image: " + path);
       img.src = path;
+    });
+  });
 
-      setStatus("Loading outfit...");
+  // ---- MODEL TOGGLE ----
+  modelButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      modelButtons.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      currentModel = btn.dataset.model;
+      update3DPreview();
+    });
+  });
+
+  // ---- DOWNLOAD ----
+  downloadBtn.addEventListener("click", () => {
+    if (!baseSkinImg) return;
+
+    let url;
+    try {
+      url = canvas.toDataURL("image/png");
+    } catch (err) {
+      console.error(err);
+      setStatus("Security error – you must use the GitHub Pages URL.");
+      return;
     }
 
-    // ====== EVENT LISTENERS ======
-
-    // Upload skin file
-    skinFileInput.addEventListener("change", (e) => {
-      const file = e.target.files[0];
-      loadSkinFromFile(file);
-    });
-
-    // Username search
-    loadUsernameBtn.addEventListener("click", () => {
-      const username = usernameInput.value.trim();
-      if (!username) {
-        setStatus("Enter a username first.");
-        return;
-      }
-      loadSkinFromUsername(username);
-    });
-
-    usernameInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        loadUsernameBtn.click();
-      }
-    });
-
-    // Outfit selection
-    outfitButtons.forEach((btn) => {
-      btn.addEventListener("click", () => {
-        outfitButtons.forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
-
-        const outfitPath = btn.dataset.outfit || "";
-        loadOutfit(outfitPath);
-      });
-    });
-
-    // Model toggle (Steve / Slim)
-    modelButtons.forEach((btn) => {
-      btn.addEventListener("click", () => {
-        modelButtons.forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
-
-        currentModel = btn.dataset.model === "slim" ? "slim" : "default";
-        update3DPreview();
-      });
-    });
-
-    // Download final PNG
-    downloadBtn.addEventListener("click", () => {
-      if (!baseSkinImg) return;
-
-      let dataUrl;
-      try {
-        dataUrl = canvas.toDataURL("image/png");
-      } catch (e) {
-        console.error(e);
-        setStatus("Browser blocked download (security). Make sure you're using the GitHub Pages URL, not file://");
-        return;
-      }
-
-      const link = document.createElement("a");
-      link.download = "probending_skin.png";
-      link.href = dataUrl;
-
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    });
-
-    // ====== INITIAL ======
-    renderCanvas();
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "probending_skin.png";
+    a.click();
   });
+
+  renderCanvas();
+});
 </script>
