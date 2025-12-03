@@ -1,160 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Probending Wardrobe</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <script src="https://unpkg.com/skinview3d/bundles/skinview3d.bundle.js"></script>
-
-  <style>
-    body {
-      margin: 0;
-      background: #0b0e1a;
-      font-family: system-ui, sans-serif;
-      color: #eee;
-      display: flex;
-      justify-content: center;
-      padding: 20px;
-    }
-    .app {
-      width: 100%;
-      max-width: 1000px;
-      display: grid;
-      grid-template-columns: 1.1fr 1fr;
-      gap: 20px;
-    }
-    .card {
-      background: #151a28;
-      padding: 16px;
-      border-radius: 10px;
-      border: 1px solid #2a3147;
-    }
-    h2 { margin-top: 0; }
-    label { display: block; margin-top: 6px; }
-    input[type="file"], input[type="text"] {
-      width: 100%;
-      padding: 6px;
-      border-radius: 6px;
-      border: 1px solid #333a50;
-      background: #0e1320;
-      color: white;
-    }
-    button {
-      padding: 8px 12px;
-      background: #3b82f6;
-      border: none;
-      border-radius: 6px;
-      color: white;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-    .outfit-grid {
-      display: grid;
-      grid-template-columns: repeat(2,1fr);
-      gap: 8px;
-      margin-top: 10px;
-    }
-    .outfit-btn {
-      background: #22283a;
-      border: 1px solid #3b4055;
-      padding: 8px;
-      border-radius: 6px;
-      cursor: pointer;
-      text-align: center;
-    }
-    .outfit-btn.active {
-      background: #16a34a;
-      border-color: #16a34a;
-    }
-    .viewer-bg {
-      background-image: url("assets/probending_bg.png");
-      background-size: cover;
-      background-position: center;
-      padding: 10px;
-      border-radius: 10px;
-      border: 1px solid #2a3147;
-    }
-    #skin3d {
-      width: 100%;
-      height: 380px;
-    }
-    .toggle-row {
-      display: flex;
-      gap: 10px;
-      margin-top: 12px;
-    }
-    .toggle-btn {
-      flex: 1;
-      padding: 8px;
-      border: 1px solid #3b4055;
-      background: #22283a;
-      border-radius: 6px;
-      text-align: center;
-      cursor: pointer;
-    }
-    .toggle-btn.active {
-      background: #16a34a;
-      border-color: #16a34a;
-    }
-  </style>
-</head>
-
-<body>
-
-<div class="app">
-
-  <!-- LEFT PANEL -->
-  <div class="card">
-    <h2>Load Skin</h2>
-
-    <label>Upload Skin (.png)</label>
-    <input type="file" id="skinFile" accept="image/png" />
-
-    <label>Or Username</label>
-    <input type="text" id="usernameInput" placeholder="Minecraft username" />
-    <button id="loadUsernameBtn">Load</button>
-
-    <h2>Choose Outfit</h2>
-    <div class="outfit-grid">
-      <div class="outfit-btn" data-outfit="outfits/red_team.png">Red</div>
-      <div class="outfit-btn" data-outfit="outfits/blue_team.png">Blue</div>
-      <div class="outfit-btn" data-outfit="outfits/red_slim.png">Red Slim</div>
-      <div class="outfit-btn" data-outfit="outfits/blue_slim.png">Blue Slim</div>
-    </div>
-
-    <h2>Model Type</h2>
-    <div class="toggle-row">
-      <div class="toggle-btn active" data-model="default">Steve</div>
-      <div class="toggle-btn" data-model="slim">Slim</div>
-    </div>
-  </div>
-
-  <!-- RIGHT PANEL -->
-  <div class="card">
-    <h2>Preview & Download</h2>
-
-    <div class="viewer-bg">
-      <canvas id="skin3d"></canvas>
-    </div>
-
-    <!-- REQUIRED HIDDEN CANVAS -->
-    <canvas id="skinCanvas" width="64" height="64" style="display:none;"></canvas>
-
-    <div id="statusText">Load a skin to begin.</div>
-    <button id="downloadBtn" disabled>Download</button>
-  </div>
-
-</div>
-
-
-<!-- ======================================================
-     SCRIPT — FIXED & SAFE
-====================================================== -->
-
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("Probending Wardrobe – Base Outer-Layer Wipe Build Loaded");
+  console.log("Probending Wardrobe – Final Base Second-Layer Hide Build Loaded");
 
   const canvas = document.getElementById("skinCanvas");
   const ctx = canvas.getContext("2d");
@@ -171,8 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let outfitImg = null;
   let currentModel = "default";
 
-
-  /* 3D VIEWER */
+  // 3D VIEWER
   const viewer = new skinview3d.SkinViewer({
     canvas: skin3dCanvas,
     width: 300,
@@ -181,77 +26,112 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   viewer.autoRotate = true;
 
-
-  /* REMOVE base skin's torso/arms/legs SECOND LAYER */
+  /**
+   * Wipe ONLY the base skin's second layer for:
+   * - Torso
+   * - Arms
+   * - Legs/Feet
+   *
+   * Coordinates are for 64x64 skins:
+   *  - Torso outer: 16,32 size 24x16
+   *  - Right arm outer: 40,32 size 16x16
+   *  - Left arm outer: 32,48 size 16x16
+   *  - Right leg outer: 0,32 size 16x16
+   *  - Left leg outer: 16,48 size 16x16
+   */
   function clearOuterLayer() {
-    ctx.clearRect(16,32,24,16); // torso
-    ctx.clearRect(40,32,16,16); // R arm outer
-    ctx.clearRect(32,48,16,16); // L arm outer
-    ctx.clearRect(0,32,16,16);  // R leg outer
-    ctx.clearRect(16,48,16,16); // L leg outer
+    // Torso outer layer
+    ctx.clearRect(16, 32, 24, 16);
+
+    // Arms outer layer
+    ctx.clearRect(40, 32, 16, 16); // Right arm
+    ctx.clearRect(32, 48, 16, 16); // Left arm
+
+    // Legs/feet outer layer
+    ctx.clearRect(0, 32, 16, 16);  // Right leg
+    ctx.clearRect(16, 48, 16, 16); // Left leg
   }
 
-
+  // Update 3D viewer using the current canvas
   function update3D() {
     if (!baseSkinImg) return;
     viewer.loadSkin(canvas.toDataURL(), { model: currentModel });
   }
 
-
+  // Rebuild the hidden canvas: base -> wipe layer -> outfit -> viewer
   function renderCanvas() {
     if (!baseSkinImg) return;
 
     canvas.width = 64;
     canvas.height = 64;
 
-    ctx.clearRect(0,0,64,64);
+    // Draw base skin
+    ctx.clearRect(0, 0, 64, 64);
     ctx.drawImage(baseSkinImg, 0, 0);
 
+    // Remove the base skin's torso/arms/legs second layer
     clearOuterLayer();
 
-    if (outfitImg) ctx.drawImage(outfitImg, 0, 0);
+    // Draw outfit on top
+    if (outfitImg) {
+      ctx.drawImage(outfitImg, 0, 0);
+    }
 
+    // Refresh viewer + enable download
     update3D();
     downloadBtn.disabled = false;
+    statusText.textContent = "Outfit applied. You can download your probending skin.";
   }
 
-
   /* LOADERS */
+
+  // Upload skin file
   document.getElementById("skinFile").addEventListener("change", (e) => {
     const file = e.target.files[0];
+    if (!file) return;
+
     const reader = new FileReader();
     reader.onload = (ev) => {
       const img = new Image();
-      img.onload = () => { baseSkinImg = img; renderCanvas(); };
+      img.onload = () => {
+        baseSkinImg = img;
+        renderCanvas();
+      };
       img.src = ev.target.result;
     };
     reader.readAsDataURL(file);
   });
 
-
+  // Load skin by username
   document.getElementById("loadUsernameBtn").addEventListener("click", () => {
     const name = document.getElementById("usernameInput").value.trim();
     if (!name) return;
 
     const img = new Image();
     img.crossOrigin = "anonymous";
-    img.onload = () => { baseSkinImg = img; renderCanvas(); };
+    img.onload = () => {
+      baseSkinImg = img;
+      renderCanvas();
+    };
     img.src = "https://minotar.net/skin/" + encodeURIComponent(name);
   });
 
-
+  // Outfit buttons
   outfitButtons.forEach(btn => {
     btn.addEventListener("click", () => {
       outfitButtons.forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
 
       const img = new Image();
-      img.onload = () => { outfitImg = img; renderCanvas(); };
+      img.onload = () => {
+        outfitImg = img;
+        renderCanvas();
+      };
       img.src = btn.dataset.outfit;
     });
   });
 
-
+  // Model type toggle (Steve / Slim)
   modelButtons.forEach(btn => {
     btn.addEventListener("click", () => {
       modelButtons.forEach(b => b.classList.remove("active"));
@@ -262,8 +142,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-
-  /* DOWNLOAD */
+  // DOWNLOAD
   downloadBtn.addEventListener("click", () => {
     const a = document.createElement("a");
     a.href = canvas.toDataURL("image/png");
@@ -273,6 +152,3 @@ document.addEventListener("DOMContentLoaded", () => {
 
 });
 </script>
-
-</body>
-</html>
