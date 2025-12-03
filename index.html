@@ -394,13 +394,74 @@
       }
 
       // ====== DRAW ON 2D CANVAS ======
-      function renderCanvas() {
-        if (!baseSkinImg) {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          setStatus("Load a skin to get started.");
-          downloadBtn.disabled = true;
-          return;
-        }
+     function renderCanvas() {
+  if (!baseSkinImg) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setStatus("Load a skin to get started.");
+    downloadBtn.disabled = true;
+    return;
+  }
+
+  // Resize canvas to match skin
+  canvas.width = baseSkinImg.width;
+  canvas.height = baseSkinImg.height;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // 1) Draw base skin
+  ctx.drawImage(baseSkinImg, 0, 0, canvas.width, canvas.height);
+
+  // 2) Clear original outer clothing layer (jacket/sleeves/legs)
+  //    Coords are for standard 64x64 Java skin layout.
+
+  // --- Upper outer layer (Y = 36 to 48) ---
+  // Body outer (jacket)
+  ctx.clearRect(16, 36, 12, 12);  // x, y, width, height
+
+  // Right arm outer
+  ctx.clearRect(40, 36, 8, 12);
+
+  // Left arm outer
+  ctx.clearRect(48, 36, 8, 12);
+
+  // Right leg outer
+  ctx.clearRect(0, 36, 8, 12);
+
+  // Left leg outer
+  ctx.clearRect(8, 36, 8, 12);
+
+  // --- Lower outer layer (mirrored limbs at bottom of texture, Y = 52 to 64) ---
+  // Body outer (jacket bottom copy)
+  ctx.clearRect(16, 52, 12, 12);
+
+  // Right arm outer (bottom copy)
+  ctx.clearRect(40, 52, 8, 12);
+
+  // Left arm outer (bottom copy)
+  ctx.clearRect(48, 52, 8, 12);
+
+  // Right leg outer (bottom copy)
+  ctx.clearRect(0, 52, 8, 12);
+
+  // Left leg outer (bottom copy)
+  ctx.clearRect(8, 52, 8, 12);
+
+  // (We intentionally do NOT clear the head hat layer so hair / hats still show.)
+
+  // 3) Draw probending outfit overlay on top
+  if (outfitImg) {
+    ctx.drawImage(outfitImg, 0, 0, canvas.width, canvas.height);
+    setStatus("Skin + outfit ready. Click download to save.");
+  } else {
+    setStatus("Skin loaded. Select an outfit or download as-is.");
+  }
+
+  downloadBtn.disabled = false;
+
+  // 4) Update the 3D preview
+  update3DPreview();
+}
+
 
         // Resize canvas to match skin
         canvas.width = baseSkinImg.width;
