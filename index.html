@@ -159,7 +159,6 @@
       <canvas id="skin3d"></canvas>
     </div>
 
-    <!-- Hidden canvas for compositing -->
     <canvas id="skinCanvas" width="64" height="64" style="display:none;"></canvas>
 
     <div id="statusText">Load a skin to begin.</div>
@@ -171,7 +170,7 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("Probending Wardrobe – UV-Fixed Build Loaded");
+  console.log("Probending Wardrobe – Final Outer-Layer Fix Loaded");
 
   const canvas = document.getElementById("skinCanvas");
   const ctx = canvas.getContext("2d");
@@ -180,7 +179,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const downloadBtn = document.getElementById("downloadBtn");
 
   const outfitButtons = [...document.querySelectorAll(".outfit-btn")];
-  const modelButtons = [...document.querySelectorAll(".toggle-btn")];
+  const modelButtons  = [...document.querySelectorAll(".toggle-btn")];
 
   const skin3dCanvas = document.getElementById("skin3d");
 
@@ -201,8 +200,12 @@ document.addEventListener("DOMContentLoaded", () => {
     height: 380,
     zoom: 0.9
   });
+
   viewer.autoRotate = true;
   viewer.autoRotateSpeed = 0.6;
+
+  /* ⭐ THE FIX — DISABLE OUTER LAYER ⭐ */
+  viewer.playerObject.skin.outerLayer.visible = false;
 
 
   /* -------------------------------
@@ -211,41 +214,6 @@ document.addEventListener("DOMContentLoaded", () => {
   function update3D() {
     if (!baseSkinImg) return;
     viewer.loadSkin(canvas.toDataURL(), { model: currentModel });
-  }
-
-
-  /* -------------------------------------------------------
-     TRUE UV-SAFE OUTER-LAYER REMOVAL
-  ------------------------------------------------------- */
-  function clearOuterLayers() {
-    // Create a single transparent pixel to stamp UV regions with
-    const px = document.createElement("canvas");
-    px.width = 1;
-    px.height = 1;
-    const pctx = px.getContext("2d");
-    pctx.clearRect(0,0,1,1);
-
-    const regions = [
-      [16,36,24,12],  // torso layer 2
-      [40,36,8,12],   // right arm layer 2
-      [48,36,8,12],   // left arm layer 2
-      [0,36,8,12],    // right leg layer 2
-      [8,36,8,12],    // left leg layer 2
-      [16,52,24,12],
-      [40,52,8,12],
-      [48,52,8,12],
-      [0,52,8,12],
-      [8,52,8,12]
-    ];
-
-    // Draw transparent pixel on every UV so geometry is satisfied
-    regions.forEach(([x,y,w,h]) => {
-      for (let ix = 0; ix < w; ix++) {
-        for (let iy = 0; iy < h; iy++) {
-          ctx.drawImage(px, x + ix, y + iy);
-        }
-      }
-    });
   }
 
 
@@ -260,8 +228,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     ctx.clearRect(0,0,canvas.width,canvas.height);
     ctx.drawImage(baseSkinImg,0,0);
-
-    clearOuterLayers();
 
     if (outfitImg) ctx.drawImage(outfitImg,0,0);
 
