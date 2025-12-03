@@ -34,9 +34,7 @@
       border: 1px solid #2a3147;
     }
 
-    h2 {
-      margin-top: 0;
-    }
+    h2 { margin-top: 0; }
 
     label {
       display: block;
@@ -79,14 +77,15 @@
       cursor: pointer;
       text-align: center;
     }
-
     .outfit-btn.active {
       background: #16a34a;
       border-color: #16a34a;
     }
 
     .viewer-bg {
-      background: #0e1320;
+      background-image: url("assets/probending_bg.png");
+      background-size: cover;
+      background-position: center;
       padding: 10px;
       border-radius: 10px;
       border: 1px solid #2a3147;
@@ -112,17 +111,13 @@
       cursor: pointer;
       border-radius: 6px;
     }
-
     .toggle-btn.active {
       background: #16a34a;
-      border-color: #16a34a;
       color: white;
+      border-color: #16a34a;
     }
 
-    #statusText {
-      margin-top: 8px;
-      color: #9ca3af;
-    }
+    #statusText { margin-top: 12px; color: #9ca3af; }
   </style>
 </head>
 
@@ -134,12 +129,11 @@
   <div class="card">
     <h2>Load Skin</h2>
 
-    <!-- Upload -->
     <label>Upload Skin (.png)</label>
-    <input type="file" id="skinFile" accept="image/png">
+    <input type="file" id="skinFile" accept="image/png" />
 
     <label style="margin-top:12px;">Or Load by Username</label>
-    <input type="text" id="usernameInput" placeholder="Minecraft username">
+    <input type="text" id="usernameInput" placeholder="Minecraft username" />
     <button id="loadUsernameBtn">Load Username Skin</button>
 
     <h2 style="margin-top:20px;">Choose Probending Outfit</h2>
@@ -155,17 +149,17 @@
       <div class="toggle-btn active" data-model="default">Steve</div>
       <div class="toggle-btn" data-model="slim">Slim (Alex)</div>
     </div>
-
   </div>
 
   <!-- RIGHT PANEL -->
   <div class="card">
     <h2>Preview & Download</h2>
+
     <div class="viewer-bg">
       <canvas id="skin3d"></canvas>
     </div>
 
-    <!-- Hidden canvas for generating final skin -->
+    <!-- Hidden canvas for compositing -->
     <canvas id="skinCanvas" width="64" height="64" style="display:none;"></canvas>
 
     <div id="statusText">Load a skin to begin.</div>
@@ -213,40 +207,44 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
   /* -------------------------------
-     UPDATE 3D MODEL
+     LOAD 3D MODEL
   --------------------------------*/
   function update3D() {
     if (!baseSkinImg) return;
-
-    let url = canvas.toDataURL();
-    const img = new Image();
-    img.onload = () => {
-      viewer.loadSkin(url, { model: currentModel });
-    };
-    img.src = url;
+    const url = canvas.toDataURL();
+    viewer.loadSkin(url, { model: currentModel });
   }
 
 
-  /* -------------------------------
-     REMOVE OUTER CLOTHING LAYER
-  --------------------------------*/
+  /* -------------------------------------------------------
+     SAFE OUTER-LAYER WIPE (prevents black-arm UV bugs)
+  ------------------------------------------------------- */
   function clearOuterLayers() {
-    ctx.clearRect(16,36,24,12);
-    ctx.clearRect(40,36,8,12);
-    ctx.clearRect(48,36,8,12);
-    ctx.clearRect(0,36,8,12);
-    ctx.clearRect(8,36,8,12);
+    const regions = [
+      [16,36,24,12],
+      [40,36,8,12],
+      [48,36,8,12],
+      [0,36,8,12],
+      [8,36,8,12],
+      [16,52,24,12],
+      [40,52,8,12],
+      [48,52,8,12],
+      [0,52,8,12],
+      [8,52,8,12]
+    ];
 
-    ctx.clearRect(16,52,24,12);
-    ctx.clearRect(40,52,8,12);
-    ctx.clearRect(48,52,8,12);
-    ctx.clearRect(0,52,8,12);
-    ctx.clearRect(8,52,8,12);
+    ctx.globalCompositeOperation = "source-over";
+    ctx.fillStyle = "rgba(0,0,0,0)";
+
+    regions.forEach(([x,y,w,h]) => {
+      ctx.clearRect(x,y,w,h);
+      ctx.fillRect(x,y,w,h);
+    });
   }
 
 
   /* -------------------------------
-     RENDER FINAL COMPOSITE
+     RENDER COMPOSITE
   --------------------------------*/
   function renderCanvas() {
     if (!baseSkinImg) return;
@@ -267,9 +265,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 
-  /* -------------------------------
-     LOAD SKIN FROM UPLOAD
-  --------------------------------*/
+  /* LOAD FROM UPLOAD */
   document.getElementById("skinFile").addEventListener("change", (e) => {
     const file = e.target.files[0];
     const reader = new FileReader();
@@ -282,9 +278,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
 
-  /* -------------------------------
-     LOAD BY USERNAME
-  --------------------------------*/
+  /* LOAD FROM USERNAME */
   document.getElementById("loadUsernameBtn").addEventListener("click", () => {
     const name = document.getElementById("usernameInput").value.trim();
     if (!name) return;
@@ -296,9 +290,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
 
-  /* -------------------------------
-     OUTFIT BUTTONS
-  --------------------------------*/
+  /* OUTFITS */
   outfitButtons.forEach(btn => {
     btn.addEventListener("click", () => {
       outfitButtons.forEach(b => b.classList.remove("active"));
@@ -312,22 +304,19 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
 
-  /* -------------------------------
-     MODEL TOGGLE
-  --------------------------------*/
+  /* MODEL TOGGLE */
   modelButtons.forEach(btn => {
     btn.addEventListener("click", () => {
       modelButtons.forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
+
       currentModel = btn.dataset.model;
       update3D();
     });
   });
 
 
-  /* -------------------------------
-     DOWNLOAD BUTTON
-  --------------------------------*/
+  /* DOWNLOAD BUTTON */
   downloadBtn.addEventListener("click", () => {
     const a = document.createElement("a");
     a.href = canvas.toDataURL("image/png");
