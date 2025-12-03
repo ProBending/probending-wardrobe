@@ -1,176 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Probending Wardrobe</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <!-- 3D Skin Viewer -->
-  <script src="https://unpkg.com/skinview3d/bundles/skinview3d.bundle.js"></script>
-
-  <style>
-    body {
-      margin: 0;
-      background: #0b0e1a;
-      font-family: system-ui, sans-serif;
-      color: #eee;
-      display: flex;
-      justify-content: center;
-      padding: 20px;
-    }
-
-    .app {
-      width: 100%;
-      max-width: 1000px;
-      display: grid;
-      grid-template-columns: 1.1fr 1fr;
-      gap: 20px;
-    }
-
-    .card {
-      background: #151a28;
-      padding: 16px;
-      border-radius: 10px;
-      border: 1px solid #2a3147;
-    }
-
-    h2 { margin-top: 0; }
-
-    label {
-      display: block;
-      margin: 6px 0 2px;
-    }
-
-    input[type="file"],
-    input[type="text"] {
-      width: 100%;
-      padding: 6px;
-      border-radius: 6px;
-      border: 1px solid #333a50;
-      background: #0e1320;
-      color: white;
-    }
-
-    button {
-      padding: 8px 12px;
-      background: #3b82f6;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      color: white;
-      margin-top: 10px;
-    }
-
-    .outfit-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 8px;
-      margin-top: 10px;
-    }
-
-    .outfit-btn {
-      background: #22283a;
-      border: 1px solid #3b4055;
-      padding: 8px;
-      border-radius: 6px;
-      color: white;
-      cursor: pointer;
-      text-align: center;
-    }
-    .outfit-btn.active {
-      background: #16a34a;
-      border-color: #16a34a;
-    }
-
-    .viewer-bg {
-      background-image: url("assets/probending_bg.png");
-      background-size: cover;
-      background-position: center;
-      padding: 10px;
-      border-radius: 10px;
-      border: 1px solid #2a3147;
-    }
-
-    #skin3d {
-      width: 100%;
-      height: 380px;
-    }
-
-    .toggle-row {
-      margin-top: 12px;
-      display: flex;
-      gap: 10px;
-    }
-
-    .toggle-btn {
-      flex: 1;
-      background: #22283a;
-      border: 1px solid #3b4055;
-      padding: 8px;
-      text-align: center;
-      cursor: pointer;
-      border-radius: 6px;
-    }
-    .toggle-btn.active {
-      background: #16a34a;
-      color: white;
-      border-color: #16a34a;
-    }
-
-    #statusText { margin-top: 12px; color: #9ca3af; }
-  </style>
-</head>
-
-<body>
-
-<div class="app">
-
-  <!-- LEFT PANEL -->
-  <div class="card">
-    <h2>Load Skin</h2>
-
-    <label>Upload Skin (.png)</label>
-    <input type="file" id="skinFile" accept="image/png" />
-
-    <label style="margin-top:12px;">Or Load by Username</label>
-    <input type="text" id="usernameInput" placeholder="Minecraft username" />
-    <button id="loadUsernameBtn">Load Username Skin</button>
-
-    <h2 style="margin-top:20px;">Choose Probending Outfit</h2>
-    <div class="outfit-grid">
-      <div class="outfit-btn" data-outfit="outfits/red_team.png">Red</div>
-      <div class="outfit-btn" data-outfit="outfits/blue_team.png">Blue</div>
-      <div class="outfit-btn" data-outfit="outfits/red_slim.png">Red (Slim)</div>
-      <div class="outfit-btn" data-outfit="outfits/blue_slim.png">Blue (Slim)</div>
-    </div>
-
-    <h2 style="margin-top:20px;">Model Type</h2>
-    <div class="toggle-row">
-      <div class="toggle-btn active" data-model="default">Steve</div>
-      <div class="toggle-btn" data-model="slim">Slim (Alex)</div>
-    </div>
-  </div>
-
-  <!-- RIGHT PANEL -->
-  <div class="card">
-    <h2>Preview & Download</h2>
-
-    <div class="viewer-bg">
-      <canvas id="skin3d"></canvas>
-    </div>
-
-    <canvas id="skinCanvas" width="64" height="64" style="display:none;"></canvas>
-
-    <div id="statusText">Load a skin to begin.</div>
-    <button id="downloadBtn" disabled>Download Skin</button>
-  </div>
-
-</div>
-
-
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("Probending Wardrobe – Final Outer-Layer Fix Loaded");
+  console.log("Probending Wardrobe – Base Outer-Layer Wipe Build Loaded");
 
   const canvas = document.getElementById("skinCanvas");
   const ctx = canvas.getContext("2d");
@@ -204,8 +34,37 @@ document.addEventListener("DOMContentLoaded", () => {
   viewer.autoRotate = true;
   viewer.autoRotateSpeed = 0.6;
 
-  /* ⭐ THE FIX — DISABLE OUTER LAYER ⭐ */
-  viewer.playerObject.skin.outerLayer.visible = false;
+  // ❌ IMPORTANT: we DO NOT touch viewer.playerObject.skin.outerLayer here.
+  // That was causing "Cannot set properties of undefined (setting 'visible')".
+
+
+  /* -------------------------------
+     Clear base skin's body/arms/legs OUTER LAYER
+     (keep only head outer layer so hats etc still work)
+  --------------------------------*/
+  function clearBaseOuterLayers() {
+    if (!canvas.width || !canvas.height) return;
+
+    // Minecraft 64x64 UVs, bottom-half = outer layer:
+
+    // Body outer layer (torso jacket)
+    ctx.clearRect(16, 32, 24, 16); // x, y, w, h
+
+    // Right arm outer layer (classic)
+    ctx.clearRect(40, 32, 16, 16);
+
+    // Left arm outer layer
+    ctx.clearRect(32, 48, 16, 16);
+
+    // Right leg outer layer
+    ctx.clearRect(0, 32, 16, 16);
+
+    // Left leg outer layer
+    ctx.clearRect(16, 48, 16, 16);
+
+    // NOTE: We intentionally do NOT clear the head outer layer (32,0,32x16)
+    // so any hats / hair accessories stay visible.
+  }
 
 
   /* -------------------------------
@@ -226,10 +85,18 @@ document.addEventListener("DOMContentLoaded", () => {
     canvas.width = baseSkinImg.width;
     canvas.height = baseSkinImg.height;
 
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    ctx.drawImage(baseSkinImg,0,0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (outfitImg) ctx.drawImage(outfitImg,0,0);
+    // Draw the player's base skin
+    ctx.drawImage(baseSkinImg, 0, 0);
+
+    // 🔥 Wipe base skin's outer body/arms/legs
+    clearBaseOuterLayers();
+
+    // Then draw the probending outfit on top
+    if (outfitImg) {
+      ctx.drawImage(outfitImg, 0, 0);
+    }
 
     update3D();
     downloadBtn.disabled = false;
@@ -240,10 +107,15 @@ document.addEventListener("DOMContentLoaded", () => {
   /* LOAD FROM UPLOAD */
   document.getElementById("skinFile").addEventListener("change", e => {
     const file = e.target.files[0];
+    if (!file) return;
+
     const reader = new FileReader();
     reader.onload = ev => {
       const img = new Image();
-      img.onload = () => { baseSkinImg = img; renderCanvas(); };
+      img.onload = () => {
+        baseSkinImg = img;
+        renderCanvas();
+      };
       img.src = ev.target.result;
     };
     reader.readAsDataURL(file);
@@ -257,7 +129,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const img = new Image();
     img.crossOrigin = "anonymous";
-    img.onload = () => { baseSkinImg = img; renderCanvas(); };
+    img.onload = () => {
+      baseSkinImg = img;
+      renderCanvas();
+    };
     img.src = "https://minotar.net/skin/" + encodeURIComponent(name);
   });
 
@@ -269,7 +144,10 @@ document.addEventListener("DOMContentLoaded", () => {
       btn.classList.add("active");
 
       const img = new Image();
-      img.onload = () => { outfitImg = img; renderCanvas(); };
+      img.onload = () => {
+        outfitImg = img;
+        renderCanvas();
+      };
       img.src = btn.dataset.outfit;
     });
   });
@@ -297,6 +175,3 @@ document.addEventListener("DOMContentLoaded", () => {
 
 });
 </script>
-
-</body>
-</html>
