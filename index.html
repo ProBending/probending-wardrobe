@@ -19,7 +19,7 @@
   }
   .outfit-btn.active, .toggle-btn.active { background:#008cff; }
 
-  /* OPTIONAL background (does not affect JS functionality) */
+  /* OPTIONAL viewer background */
   #viewerWrapper {
     position: relative;
     width: 300px;
@@ -112,7 +112,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   viewer.autoRotate = true;
 
-  // --- REMOVE torso / legs / arms ---
 function clearOuterLayer() {
   ctx.clearRect(16, 16, 24, 32);
   ctx.clearRect(40, 18, 16, 14);
@@ -124,7 +123,7 @@ function clearOuterLayer() {
   ctx.clearRect(0, 48, 16, 16);
 }
 
-  // --- DEFAULT OUTFIT AUTO-APPLY ---
+  // --- DEFAULT OUTFIT ---
   function applyDefaultOutfit(callback) {
     const defaultOutfit = "outfits/red_team.png";
 
@@ -214,7 +213,7 @@ function clearOuterLayer() {
     });
   });
 
-  // --- DOWNLOAD ---
+  // --- DOWNLOAD SKIN ---
   downloadBtn.addEventListener("click", () => {
     const a = document.createElement("a");
     a.href = canvas.toDataURL("image/png");
@@ -222,32 +221,48 @@ function clearOuterLayer() {
     a.click();
   });
 
-  // --- GET SKIN URL (Catbox Upload) ---
+  // --- GET SKIN URL (IMGUR ANONYMOUS) ---
   getUrlBtn.addEventListener("click", () => {
     const pngData = canvas.toDataURL("image/png");
 
+    statusText.textContent = "Uploading skin to Imgur...";
+
+    // Convert base64 → Blob
     fetch(pngData)
       .then(res => res.blob())
       .then(blob => {
 
         const formData = new FormData();
-        formData.append("reqtype", "fileupload");
-        formData.append("fileToUpload", blob, "skin.png");
+        formData.append("image", blob);
 
-        statusText.textContent = "Uploading skin...";
-
-        fetch("https://catbox.moe/user/api.php", {
+        fetch("https://api.imgur.com/3/image", {
           method: "POST",
+          headers: {
+            Authorization: "Client-ID 546c2f2a37f56a3" // public Imgur anonymous client ID
+          },
           body: formData
         })
-        .then(res => res.text())
-        .then(url => {
-          skinUrlDisplay.textContent = url;
+        .then(res => res.json())
+        .then(data => {
+          if (!data.success) {
+            statusText.textContent = "Error uploading to Imgur.";
+            skinUrlDisplay.textContent = "Upload failed.";
+            return;
+          }
+
+          const directUrl = data.data.link;         // https://i.imgur.com/ID.png
+          const id = data.data.id;                  // the gallery ID
+          const pageUrl = "https://imgur.com/" + id;
+
+          skinUrlDisplay.innerHTML =
+            `<strong>Direct PNG:</strong> <br>${directUrl}<br><br>` +
+            `<strong>Imgur Page:</strong> <br>${pageUrl}`;
+
           statusText.textContent = "Skin URL ready!";
         })
         .catch(err => {
+          statusText.textContent = "Imgur upload error.";
           skinUrlDisplay.textContent = "Upload failed.";
-          statusText.textContent = "Error uploading skin.";
           console.error(err);
         });
 
