@@ -90,15 +90,27 @@ document.addEventListener("DOMContentLoaded", () => {
   viewer.autoRotate = true;
 
   // --- REMOVE torso / legs / arms (base + outer layer) ---
-  function clearOuterLayer() {
-    ctx.clearRect(16, 16, 24, 32);
-    ctx.clearRect(40, 16, 16, 32);
-    ctx.clearRect(32, 48, 16, 16);
-    ctx.clearRect(48, 48, 16, 16);
-    ctx.clearRect(0, 16, 16, 32);
-    ctx.clearRect(16, 48, 16, 16);
-    ctx.clearRect(0, 48, 16, 16);
-  }
+function clearOuterLayer() {
+  // 🟡 BODY (wipe fully)
+  ctx.clearRect(16, 16, 24, 32);
+
+  // 🟡 RIGHT ARM (wipe everything EXCEPT top 2px)
+  // Full arm area is 40–56 (x), 16–32 (y)
+  ctx.clearRect(40, 18, 16, 14); // skip y=16–18
+
+  // 🟡 LEFT ARM (1.8 skin) — wipe everything EXCEPT top 2px
+  // Full left arm is at 32–48 (x), 48–64 (y)
+  ctx.clearRect(32, 50, 16, 14); // skip y=48–50
+
+  // 🟡 OUTER ARM LAYERS — wipe fully (we don't need ANY of these)
+  ctx.clearRect(40, 32, 16, 16);
+  ctx.clearRect(48, 48, 16, 16);
+
+  // 🟡 LEGS — wipe fully (outfit covers everything)
+  ctx.clearRect(0, 16, 16, 32);
+  ctx.clearRect(16, 48, 16, 16);
+  ctx.clearRect(0, 48, 16, 16);
+}
 
   // --- RENDER ---
   function renderCanvas() {
