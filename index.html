@@ -29,7 +29,6 @@
     border-radius: 6px;
   }
 </style>
-
 </head>
 
 <body>
@@ -75,16 +74,16 @@
       <button id="getUrlBtn" disabled>Get Skin URL</button>
 
       <p id="skinUrlDisplay" style="word-break: break-all;"></p>
-
     </div>
   </div>
 </div>
-
 
 <!-- SCRIPT -->
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   console.log("Probending Wardrobe – Loaded");
+
+  const WORKER_ENDPOINT = "https://probending.raohenhuo.workers.dev/"; // NEW
 
   const canvas = document.getElementById("skinCanvas");
   const ctx = canvas.getContext("2d");
@@ -110,7 +109,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   viewer.autoRotate = true;
 
-  // Wipe base layers so outfit covers everything
   function clearOuterLayer() {
     ctx.clearRect(16, 16, 24, 32);
     ctx.clearRect(40, 18, 16, 14);
@@ -152,7 +150,7 @@ document.addEventListener("DOMContentLoaded", () => {
     statusText.textContent = "Outfit applied — ready!";
   }
 
-  // File upload
+  // Load from file
   document.getElementById("skinFile").addEventListener("change", e => {
     const file = e.target.files[0];
     if (!file) return;
@@ -166,7 +164,7 @@ document.addEventListener("DOMContentLoaded", () => {
     reader.readAsDataURL(file);
   });
 
-  // Username load
+  // Load username skin
   document.getElementById("loadUsernameBtn").addEventListener("click", () => {
     const name = document.getElementById("usernameInput").value.trim();
     if (!name) return;
@@ -177,7 +175,7 @@ document.addEventListener("DOMContentLoaded", () => {
     img.src = "https://minotar.net/skin/" + encodeURIComponent(name) + "?v=" + Date.now();
   });
 
-  // Outfits
+  // Outfit selection
   outfitButtons.forEach(btn => {
     btn.addEventListener("click", () => {
       outfitButtons.forEach(b => b.classList.remove("active"));
@@ -201,7 +199,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Download
+  // Download PNG
   downloadBtn.addEventListener("click", () => {
     const a = document.createElement("a");
     a.href = canvas.toDataURL("image/png");
@@ -209,24 +207,59 @@ document.addEventListener("DOMContentLoaded", () => {
     a.click();
   });
 
-  // --- GET SKIN URL (manual helper) ---
-  getUrlBtn.addEventListener("click", () => {
-    statusText.textContent = "Skin URL instructions ready.";
+  // ----------- NEW AUTOMATIC GET SKIN URL -----------
+  async function uploadSkin() {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(async blob => {
+        if (!blob) return reject("Canvas export failed.");
 
-    // Open SkinRestorer in a new tab
-    window.open("https://skinsrestorer.net/upload", "_blank");
+        const fd = new FormData();
+        fd.append("skin", blob, "probending.png");
 
-    skinUrlDisplay.innerHTML = `
-      <strong>How to apply your skin:</strong><br><br>
-      1. Click <strong>Download Skin</strong> and save the PNG.<br><br>
-      2. A new tab has opened:<br>
-      <a href="https://skinsrestorer.net/upload" target="_blank">https://skinsrestorer.net/upload</a><br>
-      Upload your downloaded skin file.<br><br>
-      3. Copy the URL that SkinRestorer generates.<br><br>
-      4. Use this in-game:<br>
-      <code>/skin set &lt;url&gt;</code><br><br>
-    `;
+        try {
+          const res = await fetch(WORKER_ENDPOINT, {
+            method: "POST",
+            body: fd
+          });
+
+          if (!res.ok) {
+            const t = await res.text();
+            throw new Error("Worker error: " + t);
+          }
+
+          const data = await res.json();
+          resolve(data);
+        } catch (err) {
+          reject(err);
+        }
+      });
+    });
+  }
+
+  getUrlBtn.addEventListener("click", async () => {
+    if (!baseSkinImg) return;
+
+    statusText.textContent = "Uploading skin…";
+
+    try {
+      const result = await uploadSkin();
+
+      skinUrlDisplay.innerHTML = `
+        <strong>Texture URL:</strong><br>${result.textureUrl}<br><br>
+        <strong>Command:</strong><br>
+        <code>${result.command}</code>
+      `;
+
+      // Copy command automatically
+      await navigator.clipboard.writeText(result.command);
+
+      statusText.textContent = "Copied to clipboard! Paste in-game.";
+    } catch (err) {
+      console.error(err);
+      statusText.textContent = "Error: " + err.message;
+    }
   });
+  // ----------------------------------------------------
 
 });
 </script>
