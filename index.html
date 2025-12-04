@@ -224,7 +224,7 @@ function clearOuterLayer() {
     a.click();
   });
 
-  // --- 0x0.st UPLOAD ---
+  // --- UPLOAD TO UPLOAD.SYSTEMS ---
   getUrlBtn.addEventListener("click", () => {
     statusText.textContent = "Uploading skin...";
 
@@ -233,18 +233,31 @@ function clearOuterLayer() {
     fetch(pngData)
       .then(res => res.blob())
       .then(blob => {
+
         const formData = new FormData();
         formData.append("file", blob, "skin.png");
 
-        fetch("https://0x0.st", {
+        fetch("https://up.upload.systems/upload", {
           method: "POST",
           body: formData
         })
-        .then(res => res.text())
-        .then(url => {
-          skinUrlDisplay.innerHTML = `<strong>Direct URL:</strong> <br>${url}`;
-          commandDisplay.innerHTML = `<strong>Skin Command:</strong> <br>/skin set ${url}`;
+        .then(res => res.json())
+        .then(data => {
+          if (!data.success) {
+            statusText.textContent = "Upload failed.";
+            skinUrlDisplay.textContent = "Upload failed.";
+            return;
+          }
 
+          const url = data.files[0].url;
+
+          skinUrlDisplay.innerHTML =
+            `<strong>Direct URL:</strong><br>${url}`;
+
+          commandDisplay.innerHTML =
+            `<strong>Skin Command:</strong><br>/skin set ${url}`;
+
+          // Enable copy button
           copyBtn.disabled = false;
           copyBtn.onclick = () => {
             navigator.clipboard.writeText(url);
@@ -255,8 +268,10 @@ function clearOuterLayer() {
         })
         .catch(err => {
           statusText.textContent = "Upload failed.";
+          skinUrlDisplay.textContent = "Upload failed.";
           console.error(err);
         });
+
       });
   });
 
