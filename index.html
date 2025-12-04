@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <title>Probending Wardrobe</title>
 
-<!-- SkinView3D CDN chain (kept as-is to avoid breaking your setup) -->
+<!-- SkinView3D CDN chain (kept as-is, DO NOT REMOVE) -->
 <script src="https://cdn.jsdelivr.net/npm/skinview3d@3.0.0/bundles/skinview3d.bundle.js"></script>
 <script src="https://unpkg.com/skinview3d@3.0.0/dist/skinview3d.bundle.js"></script>
 <script src="https://rawcdn.githack.com/bs-community/skinview3d/3.0.0/bundles/skinview3d.bundle.js"></script>
@@ -19,12 +19,11 @@
   }
   .outfit-btn.active, .toggle-btn.active { background:#008cff; }
 
-  /* OPTIONAL viewer background */
   #viewerWrapper {
     position: relative;
     width: 300px;
     height: 380px;
-    background-image: url("backgrounds/arena.png"); /* optional */
+    background-image: url("backgrounds/arena.png");
     background-size: cover;
     background-position: center;
     border-radius: 6px;
@@ -59,56 +58,48 @@
     <button class="outfit-btn" data-outfit="outfits/blue_slim.png">Blue Slim</button>
   </div>
 
-  <!-- VIEWER -->
   <div class="row">
     <div class="column">
       <div id="viewerWrapper">
         <canvas id="skin3d" width="300" height="380"></canvas>
       </div>
 
-      <!-- REQUIRED HIDDEN CANVAS -->
       <canvas id="skinCanvas" width="64" height="64" style="display:none;"></canvas>
 
       <p id="statusText">Load a skin to begin.</p>
 
-      <!-- Buttons -->
       <button id="downloadBtn" disabled>Download Skin</button>
       <button id="getUrlBtn" disabled>Get Skin URL</button>
       <button id="copyBtn" disabled>Copy URL</button>
 
-      <!-- Output URL & Command -->
       <p id="skinUrlDisplay" style="word-break: break-all;"></p>
       <p id="commandDisplay" style="word-break: break-all;"></p>
     </div>
   </div>
 </div>
 
-
-<!-- FULL SCRIPT -->
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("Probending Wardrobe – Base Outer-Layer Wipe Build Loaded");
 
   const canvas = document.getElementById("skinCanvas");
   const ctx = canvas.getContext("2d");
 
-  const statusText  = document.getElementById("statusText");
+  const statusText = document.getElementById("statusText");
   const downloadBtn = document.getElementById("downloadBtn");
-  const getUrlBtn   = document.getElementById("getUrlBtn");
-  const copyBtn     = document.getElementById("copyBtn");
+  const getUrlBtn = document.getElementById("getUrlBtn");
+  const copyBtn = document.getElementById("copyBtn");
 
   const skinUrlDisplay = document.getElementById("skinUrlDisplay");
   const commandDisplay = document.getElementById("commandDisplay");
 
   const outfitButtons = Array.from(document.querySelectorAll(".outfit-btn"));
-  const modelButtons  = Array.from(document.querySelectorAll(".toggle-btn"));
+  const modelButtons = Array.from(document.querySelectorAll(".toggle-btn"));
   const skin3dCanvas = document.getElementById("skin3d");
 
-  let baseSkinImg  = null;
-  let outfitImg    = null;
+  let baseSkinImg = null;
+  let outfitImg = null;
   let currentModel = "default";
 
-  // --- VIEWER ---
   const viewer = new skinview3d.SkinViewer({
     canvas: skin3dCanvas,
     width: 300,
@@ -117,84 +108,68 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   viewer.autoRotate = true;
 
-function clearOuterLayer() {
-  ctx.clearRect(16, 16, 24, 32);
-  ctx.clearRect(40, 18, 16, 14);
-  ctx.clearRect(32, 50, 16, 14);
-  ctx.clearRect(40, 32, 16, 16);
-  ctx.clearRect(48, 48, 16, 16);
-  ctx.clearRect(0, 16, 16, 32);
-  ctx.clearRect(16, 48, 16, 16);
-  ctx.clearRect(0, 48, 16, 16);
-}
+  function clearOuterLayer() {
+    ctx.clearRect(16, 16, 24, 32);
+    ctx.clearRect(40, 18, 16, 14);
+    ctx.clearRect(32, 50, 16, 14);
+    ctx.clearRect(40, 32, 16, 16);
+    ctx.clearRect(48, 48, 16, 16);
+    ctx.clearRect(0, 16, 16, 32);
+    ctx.clearRect(16, 48, 16, 16);
+    ctx.clearRect(0, 48, 16, 16);
+  }
 
   function applyDefaultOutfit(callback) {
-    const defaultOutfit = "outfits/red_team.png";
-
+    const def = "outfits/red_team.png";
     const img = new Image();
     img.onload = () => {
       outfitImg = img;
-
-      outfitButtons.forEach(b => {
-        b.classList.toggle("active", b.dataset.outfit === defaultOutfit);
-      });
-
+      outfitButtons.forEach(b => b.classList.toggle("active", b.dataset.outfit === def));
       if (callback) callback();
     };
-    img.src = defaultOutfit;
+    img.src = def;
   }
 
   function renderCanvas() {
     if (!baseSkinImg) return;
-
     canvas.width = 64;
     canvas.height = 64;
 
-    ctx.clearRect(0, 0, 64, 64);
-    ctx.drawImage(baseSkinImg, 0, 0);
+    ctx.clearRect(0,0,64,64);
+    ctx.drawImage(baseSkinImg,0,0);
     clearOuterLayer();
-    if (outfitImg) ctx.drawImage(outfitImg, 0, 0);
+    if (outfitImg) ctx.drawImage(outfitImg,0,0);
 
     viewer.loadSkin(canvas.toDataURL("image/png"), { model: currentModel });
-
     downloadBtn.disabled = false;
     getUrlBtn.disabled = false;
     statusText.textContent = "Outfit applied — ready!";
   }
 
-  // --- FILE UPLOAD ---
-  document.getElementById("skinFile").addEventListener("change", (e) => {
+  document.getElementById("skinFile").addEventListener("change", e => {
     const file = e.target.files[0];
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = ev => {
       const img = new Image();
-      img.onload = () => {
-        baseSkinImg = img;
-        applyDefaultOutfit(renderCanvas);
-      };
+      img.onload = () => { baseSkinImg = img; applyDefaultOutfit(renderCanvas); };
       img.src = ev.target.result;
     };
     reader.readAsDataURL(file);
   });
 
-  // --- USERNAME LOAD ---
   document.getElementById("loadUsernameBtn").addEventListener("click", () => {
     const name = document.getElementById("usernameInput").value.trim();
     if (!name) return;
 
     const img = new Image();
     img.crossOrigin = "anonymous";
-    img.onload = () => {
-      baseSkinImg = img;
-      applyDefaultOutfit(renderCanvas);
-    };
+    img.onload = () => { baseSkinImg = img; applyDefaultOutfit(renderCanvas); };
     img.src = "https://minotar.net/skin/" + encodeURIComponent(name) + "?v=" + Date.now();
   });
 
-  // --- OUTFITS ---
-  outfitButtons.forEach((btn) => {
+  outfitButtons.forEach(btn => {
     btn.addEventListener("click", () => {
       outfitButtons.forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
@@ -205,8 +180,7 @@ function clearOuterLayer() {
     });
   });
 
-  // --- MODEL SWITCH ---
-  modelButtons.forEach((btn) => {
+  modelButtons.forEach(btn => {
     btn.addEventListener("click", () => {
       modelButtons.forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
@@ -216,7 +190,6 @@ function clearOuterLayer() {
     });
   });
 
-  // --- DOWNLOAD ---
   downloadBtn.addEventListener("click", () => {
     const a = document.createElement("a");
     a.href = canvas.toDataURL("image/png");
@@ -224,43 +197,35 @@ function clearOuterLayer() {
     a.click();
   });
 
-  // --- UPLOAD TO UPLOAD.SYSTEMS ---
+  // -------------------------
+  // ⚡ TRANSFER.SH UPLOADER ⚡
+  // -------------------------
   getUrlBtn.addEventListener("click", () => {
     statusText.textContent = "Uploading skin...";
 
     const pngData = canvas.toDataURL("image/png");
 
     fetch(pngData)
-      .then(res => res.blob())
+      .then(r => r.blob())
       .then(blob => {
 
         const formData = new FormData();
         formData.append("file", blob, "skin.png");
 
-        fetch("https://up.upload.systems/upload", {
-          method: "POST",
-          body: formData
+        fetch("https://transfer.sh/skin.png", {
+          method: "PUT",
+          body: blob
         })
-        .then(res => res.json())
-        .then(data => {
-          if (!data.success) {
-            statusText.textContent = "Upload failed.";
-            skinUrlDisplay.textContent = "Upload failed.";
-            return;
-          }
+        .then(res => res.text())
+        .then(url => {
+          const finalUrl = url.trim() + "?raw=1";
 
-          const url = data.files[0].url;
+          skinUrlDisplay.innerHTML = `<strong>Direct URL:</strong><br>${finalUrl}`;
+          commandDisplay.innerHTML = `<strong>Skin Command:</strong><br>/skin set ${finalUrl}`;
 
-          skinUrlDisplay.innerHTML =
-            `<strong>Direct URL:</strong><br>${url}`;
-
-          commandDisplay.innerHTML =
-            `<strong>Skin Command:</strong><br>/skin set ${url}`;
-
-          // Enable copy button
           copyBtn.disabled = false;
           copyBtn.onclick = () => {
-            navigator.clipboard.writeText(url);
+            navigator.clipboard.writeText(finalUrl);
             statusText.textContent = "Copied URL!";
           };
 
@@ -268,7 +233,6 @@ function clearOuterLayer() {
         })
         .catch(err => {
           statusText.textContent = "Upload failed.";
-          skinUrlDisplay.textContent = "Upload failed.";
           console.error(err);
         });
 
