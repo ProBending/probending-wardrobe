@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <title>Probending Wardrobe</title>
 
-<!-- SkinView3D CDN chain (kept as-is, DO NOT REMOVE) -->
+<!-- SkinView3D CDN chain (kept as-is) -->
 <script src="https://cdn.jsdelivr.net/npm/skinview3d@3.0.0/bundles/skinview3d.bundle.js"></script>
 <script src="https://unpkg.com/skinview3d@3.0.0/dist/skinview3d.bundle.js"></script>
 <script src="https://rawcdn.githack.com/bs-community/skinview3d/3.0.0/bundles/skinview3d.bundle.js"></script>
@@ -60,26 +60,31 @@
 
   <div class="row">
     <div class="column">
+
+      <!-- Viewer -->
       <div id="viewerWrapper">
         <canvas id="skin3d" width="300" height="380"></canvas>
       </div>
 
+      <!-- Hidden canvas -->
       <canvas id="skinCanvas" width="64" height="64" style="display:none;"></canvas>
 
       <p id="statusText">Load a skin to begin.</p>
 
       <button id="downloadBtn" disabled>Download Skin</button>
       <button id="getUrlBtn" disabled>Get Skin URL</button>
-      <button id="copyBtn" disabled>Copy URL</button>
 
       <p id="skinUrlDisplay" style="word-break: break-all;"></p>
-      <p id="commandDisplay" style="word-break: break-all;"></p>
+
     </div>
   </div>
 </div>
 
+
+<!-- SCRIPT -->
 <script>
 document.addEventListener("DOMContentLoaded", () => {
+  console.log("Probending Wardrobe – Loaded");
 
   const canvas = document.getElementById("skinCanvas");
   const ctx = canvas.getContext("2d");
@@ -87,10 +92,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const statusText = document.getElementById("statusText");
   const downloadBtn = document.getElementById("downloadBtn");
   const getUrlBtn = document.getElementById("getUrlBtn");
-  const copyBtn = document.getElementById("copyBtn");
-
   const skinUrlDisplay = document.getElementById("skinUrlDisplay");
-  const commandDisplay = document.getElementById("commandDisplay");
 
   const outfitButtons = Array.from(document.querySelectorAll(".outfit-btn"));
   const modelButtons = Array.from(document.querySelectorAll(".toggle-btn"));
@@ -108,6 +110,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   viewer.autoRotate = true;
 
+  // Wipe base layers so outfit covers everything
   function clearOuterLayer() {
     ctx.clearRect(16, 16, 24, 32);
     ctx.clearRect(40, 18, 16, 14);
@@ -132,20 +135,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderCanvas() {
     if (!baseSkinImg) return;
+
     canvas.width = 64;
     canvas.height = 64;
 
-    ctx.clearRect(0,0,64,64);
-    ctx.drawImage(baseSkinImg,0,0);
+    ctx.clearRect(0, 0, 64, 64);
+    ctx.drawImage(baseSkinImg, 0, 0);
     clearOuterLayer();
-    if (outfitImg) ctx.drawImage(outfitImg,0,0);
+    if (outfitImg) ctx.drawImage(outfitImg, 0, 0);
 
     viewer.loadSkin(canvas.toDataURL("image/png"), { model: currentModel });
+
     downloadBtn.disabled = false;
     getUrlBtn.disabled = false;
+
     statusText.textContent = "Outfit applied — ready!";
   }
 
+  // File upload
   document.getElementById("skinFile").addEventListener("change", e => {
     const file = e.target.files[0];
     if (!file) return;
@@ -159,6 +166,7 @@ document.addEventListener("DOMContentLoaded", () => {
     reader.readAsDataURL(file);
   });
 
+  // Username load
   document.getElementById("loadUsernameBtn").addEventListener("click", () => {
     const name = document.getElementById("usernameInput").value.trim();
     if (!name) return;
@@ -169,6 +177,7 @@ document.addEventListener("DOMContentLoaded", () => {
     img.src = "https://minotar.net/skin/" + encodeURIComponent(name) + "?v=" + Date.now();
   });
 
+  // Outfits
   outfitButtons.forEach(btn => {
     btn.addEventListener("click", () => {
       outfitButtons.forEach(b => b.classList.remove("active"));
@@ -180,16 +189,19 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // Model switching
   modelButtons.forEach(btn => {
     btn.addEventListener("click", () => {
       modelButtons.forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
 
       currentModel = btn.dataset.model;
-      if (baseSkinImg) viewer.loadSkin(canvas.toDataURL("image/png"), { model: currentModel });
+      if (baseSkinImg)
+        viewer.loadSkin(canvas.toDataURL("image/png"), { model: currentModel });
     });
   });
 
+  // Download
   downloadBtn.addEventListener("click", () => {
     const a = document.createElement("a");
     a.href = canvas.toDataURL("image/png");
@@ -197,46 +209,23 @@ document.addEventListener("DOMContentLoaded", () => {
     a.click();
   });
 
-  // -------------------------
-  // ⚡ TRANSFER.SH UPLOADER ⚡
-  // -------------------------
+  // --- GET SKIN URL (manual helper) ---
   getUrlBtn.addEventListener("click", () => {
-    statusText.textContent = "Uploading skin...";
+    statusText.textContent = "Skin URL instructions ready.";
 
-    const pngData = canvas.toDataURL("image/png");
+    // Open SkinRestorer in a new tab
+    window.open("https://skinsrestorer.net/upload", "_blank");
 
-    fetch(pngData)
-      .then(r => r.blob())
-      .then(blob => {
-
-        const formData = new FormData();
-        formData.append("file", blob, "skin.png");
-
-        fetch("https://transfer.sh/skin.png", {
-          method: "PUT",
-          body: blob
-        })
-        .then(res => res.text())
-        .then(url => {
-          const finalUrl = url.trim() + "?raw=1";
-
-          skinUrlDisplay.innerHTML = `<strong>Direct URL:</strong><br>${finalUrl}`;
-          commandDisplay.innerHTML = `<strong>Skin Command:</strong><br>/skin set ${finalUrl}`;
-
-          copyBtn.disabled = false;
-          copyBtn.onclick = () => {
-            navigator.clipboard.writeText(finalUrl);
-            statusText.textContent = "Copied URL!";
-          };
-
-          statusText.textContent = "Skin URL ready!";
-        })
-        .catch(err => {
-          statusText.textContent = "Upload failed.";
-          console.error(err);
-        });
-
-      });
+    skinUrlDisplay.innerHTML = `
+      <strong>How to apply your skin:</strong><br><br>
+      1. Click <strong>Download Skin</strong> and save the PNG.<br><br>
+      2. A new tab has opened:<br>
+      <a href="https://skinsrestorer.net/upload" target="_blank">https://skinsrestorer.net/upload</a><br>
+      Upload your downloaded skin file.<br><br>
+      3. Copy the URL that SkinRestorer generates.<br><br>
+      4. Use this in-game:<br>
+      <code>/skin set &lt;url&gt;</code><br><br>
+    `;
   });
 
 });
