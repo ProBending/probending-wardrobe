@@ -165,7 +165,7 @@ function clearOuterLayer() {
       baseSkinImg = img;
       applyDefaultOutfit(renderCanvas);   // ⭐ FIXED TIMING
     };
-    img.src = "https://minotar.net/skin/" + encodeURIComponent(name);
+    img.src = "https://minotar.net/skin/" + encodeURIComponent(name) + "?v=" + Date.now();
   });
 
   // --- OUTFITS ---
