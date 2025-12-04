@@ -74,9 +74,11 @@
       <!-- Buttons -->
       <button id="downloadBtn" disabled>Download Skin</button>
       <button id="getUrlBtn" disabled>Get Skin URL</button>
+      <button id="copyBtn" disabled>Copy URL</button>
 
-      <!-- Output URL -->
+      <!-- Output URL & Command -->
       <p id="skinUrlDisplay" style="word-break: break-all;"></p>
+      <p id="commandDisplay" style="word-break: break-all;"></p>
     </div>
   </div>
 </div>
@@ -93,7 +95,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const statusText  = document.getElementById("statusText");
   const downloadBtn = document.getElementById("downloadBtn");
   const getUrlBtn   = document.getElementById("getUrlBtn");
+  const copyBtn     = document.getElementById("copyBtn");
+
   const skinUrlDisplay = document.getElementById("skinUrlDisplay");
+  const commandDisplay = document.getElementById("commandDisplay");
 
   const outfitButtons = Array.from(document.querySelectorAll(".outfit-btn"));
   const modelButtons  = Array.from(document.querySelectorAll(".toggle-btn"));
@@ -103,7 +108,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let outfitImg    = null;
   let currentModel = "default";
 
-  // --- 3D VIEWER ---
+  // --- VIEWER ---
   const viewer = new skinview3d.SkinViewer({
     canvas: skin3dCanvas,
     width: 300,
@@ -123,7 +128,6 @@ function clearOuterLayer() {
   ctx.clearRect(0, 48, 16, 16);
 }
 
-  // --- DEFAULT OUTFIT ---
   function applyDefaultOutfit(callback) {
     const defaultOutfit = "outfits/red_team.png";
 
@@ -140,7 +144,6 @@ function clearOuterLayer() {
     img.src = defaultOutfit;
   }
 
-  // --- RENDER ---
   function renderCanvas() {
     if (!baseSkinImg) return;
 
@@ -176,7 +179,7 @@ function clearOuterLayer() {
     reader.readAsDataURL(file);
   });
 
-  // --- LOAD USERNAME ---
+  // --- USERNAME LOAD ---
   document.getElementById("loadUsernameBtn").addEventListener("click", () => {
     const name = document.getElementById("usernameInput").value.trim();
     if (!name) return;
@@ -213,7 +216,7 @@ function clearOuterLayer() {
     });
   });
 
-  // --- DOWNLOAD SKIN ---
+  // --- DOWNLOAD ---
   downloadBtn.addEventListener("click", () => {
     const a = document.createElement("a");
     a.href = canvas.toDataURL("image/png");
@@ -221,51 +224,39 @@ function clearOuterLayer() {
     a.click();
   });
 
-  // --- GET SKIN URL (IMGUR ANONYMOUS) ---
+  // --- 0x0.st UPLOAD ---
   getUrlBtn.addEventListener("click", () => {
+    statusText.textContent = "Uploading skin...";
+
     const pngData = canvas.toDataURL("image/png");
 
-    statusText.textContent = "Uploading skin to Imgur...";
-
-    // Convert base64 → Blob
     fetch(pngData)
       .then(res => res.blob())
       .then(blob => {
-
         const formData = new FormData();
-        formData.append("image", blob);
+        formData.append("file", blob, "skin.png");
 
-        fetch("https://api.imgur.com/3/image", {
+        fetch("https://0x0.st", {
           method: "POST",
-          headers: {
-            Authorization: "Client-ID 546c2f2a37f56a3" // public Imgur anonymous client ID
-          },
           body: formData
         })
-        .then(res => res.json())
-        .then(data => {
-          if (!data.success) {
-            statusText.textContent = "Error uploading to Imgur.";
-            skinUrlDisplay.textContent = "Upload failed.";
-            return;
-          }
+        .then(res => res.text())
+        .then(url => {
+          skinUrlDisplay.innerHTML = `<strong>Direct URL:</strong> <br>${url}`;
+          commandDisplay.innerHTML = `<strong>Skin Command:</strong> <br>/skin set ${url}`;
 
-          const directUrl = data.data.link;         // https://i.imgur.com/ID.png
-          const id = data.data.id;                  // the gallery ID
-          const pageUrl = "https://imgur.com/" + id;
-
-          skinUrlDisplay.innerHTML =
-            `<strong>Direct PNG:</strong> <br>${directUrl}<br><br>` +
-            `<strong>Imgur Page:</strong> <br>${pageUrl}`;
+          copyBtn.disabled = false;
+          copyBtn.onclick = () => {
+            navigator.clipboard.writeText(url);
+            statusText.textContent = "Copied URL!";
+          };
 
           statusText.textContent = "Skin URL ready!";
         })
         .catch(err => {
-          statusText.textContent = "Imgur upload error.";
-          skinUrlDisplay.textContent = "Upload failed.";
+          statusText.textContent = "Upload failed.";
           console.error(err);
         });
-
       });
   });
 
