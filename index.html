@@ -91,26 +91,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- REMOVE torso / legs / arms (base + outer layer) ---
 function clearOuterLayer() {
-  // 🟡 BODY (wipe fully)
-  ctx.clearRect(16, 16, 24, 32);
-
-  // 🟡 RIGHT ARM (wipe everything EXCEPT top 2px)
-  // Full arm area is 40–56 (x), 16–32 (y)
-  ctx.clearRect(40, 18, 16, 14); // skip y=16–18
-
-  // 🟡 LEFT ARM (1.8 skin) — wipe everything EXCEPT top 2px
-  // Full left arm is at 32–48 (x), 48–64 (y)
-  ctx.clearRect(32, 50, 16, 14); // skip y=48–50
-
-  // 🟡 OUTER ARM LAYERS — wipe fully (we don't need ANY of these)
-  ctx.clearRect(40, 32, 16, 16);
-  ctx.clearRect(48, 48, 16, 16);
-
-  // 🟡 LEGS — wipe fully (outfit covers everything)
-  ctx.clearRect(0, 16, 16, 32);
+  ctx.clearRect(16, 16, 24, 32);       // body
+  ctx.clearRect(40, 18, 16, 14);       // right arm (keep top 2px)
+  ctx.clearRect(32, 50, 16, 14);       // left arm (keep top 2px)
+  ctx.clearRect(40, 32, 16, 16);       // outer R arm
+  ctx.clearRect(48, 48, 16, 16);       // outer L arm
+  ctx.clearRect(0, 16, 16, 32);        // legs
   ctx.clearRect(16, 48, 16, 16);
   ctx.clearRect(0, 48, 16, 16);
 }
+
+  // ⭐ --- DEFAULT OUTFIT AUTO-APPLY ---
+  function applyDefaultOutfit() {
+    const defaultOutfit = "outfits/red_team.png";
+
+    const img = new Image();
+    img.onload = () => {
+      outfitImg = img;
+
+      // highlight correct button
+      outfitButtons.forEach(b => {
+        b.classList.toggle("active", b.dataset.outfit === defaultOutfit);
+      });
+    };
+    img.src = defaultOutfit;
+  }
 
   // --- RENDER ---
   function renderCanvas() {
@@ -138,7 +143,11 @@ function clearOuterLayer() {
     const reader = new FileReader();
     reader.onload = (ev) => {
       const img = new Image();
-      img.onload = () => { baseSkinImg = img; renderCanvas(); };
+      img.onload = () => {
+        baseSkinImg = img;
+        applyDefaultOutfit();   // ⭐ AUTO APPLY
+        renderCanvas();
+      };
       img.src = ev.target.result;
     };
     reader.readAsDataURL(file);
@@ -151,7 +160,11 @@ function clearOuterLayer() {
 
     const img = new Image();
     img.crossOrigin = "anonymous";
-    img.onload = () => { baseSkinImg = img; renderCanvas(); };
+    img.onload = () => {
+      baseSkinImg = img;
+      applyDefaultOutfit();   // ⭐ AUTO APPLY
+      renderCanvas();
+    };
     img.src = "https://minotar.net/skin/" + encodeURIComponent(name);
   });
 
