@@ -13,6 +13,7 @@
   }
   .outfit-btn.active, .toggle-btn.active { background:#008cff; }
 </style>
+
 <script src="https://unpkg.com/skinview3d@3.0.0/dist/skinview3d.min.js"></script>
 </head>
 
@@ -42,12 +43,12 @@
     <button class="outfit-btn" data-outfit="outfits/blue_slim.png">Blue Slim</button>
   </div>
 
-  <!-- VIEWER & STATUS -->
+  <!-- VIEWER -->
   <div class="row">
     <div class="column">
       <canvas id="skin3d" width="300" height="380"></canvas>
 
-      <!-- REQUIRED HIDDEN CANVAS (THIS WAS MISSING!) -->
+      <!-- REQUIRED HIDDEN CANVAS -->
       <canvas id="skinCanvas" width="64" height="64" style="display:none;"></canvas>
 
       <p id="statusText">Load a skin to begin.</p>
@@ -56,16 +57,12 @@
   </div>
 </div>
 
-<!-- YOUR FULL SCRIPT (ALREADY WORKING) -->
+<!-- FULL WORKING SCRIPT -->
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   console.log("Probending Wardrobe – Base Outer-Layer Wipe Build Loaded");
 
   const canvas = document.getElementById("skinCanvas");
-  if (!canvas) {
-    console.error("ERROR: #skinCanvas element not found.");
-    return;
-  }
   const ctx = canvas.getContext("2d");
 
   const statusText  = document.getElementById("statusText");
@@ -73,7 +70,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const outfitButtons = Array.from(document.querySelectorAll(".outfit-btn"));
   const modelButtons  = Array.from(document.querySelectorAll(".toggle-btn"));
-
   const skin3dCanvas = document.getElementById("skin3d");
 
   let baseSkinImg  = null;
@@ -81,20 +77,13 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentModel = "default";
 
   // --- 3D VIEWER ---
-  let viewer;
-  try {
-    viewer = new skinview3d.SkinViewer({
-      canvas: skin3dCanvas,
-      width: skin3dCanvas.clientWidth || 300,
-      height: skin3dCanvas.clientHeight || 380,
-      zoom: 0.9
-    });
-    viewer.autoRotate = true;
-  } catch (err) {
-    console.error("SkinViewer initialization failed", err);
-    if (statusText) statusText.textContent = "Error loading 3D viewer.";
-    return;
-  }
+  const viewer = new skinview3d.SkinViewer({
+    canvas: skin3dCanvas,
+    width: 300,
+    height: 380,
+    zoom: 0.9
+  });
+  viewer.autoRotate = true;
 
   // --- REMOVE torso / legs / arms (base + outer layer) ---
   function clearOuterLayer() {
@@ -116,9 +105,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     ctx.clearRect(0, 0, 64, 64);
     ctx.drawImage(baseSkinImg, 0, 0);
-
     clearOuterLayer();
-
     if (outfitImg) ctx.drawImage(outfitImg, 0, 0);
 
     viewer.loadSkin(canvas.toDataURL("image/png"), { model: currentModel });
@@ -127,8 +114,8 @@ document.addEventListener("DOMContentLoaded", () => {
     statusText.textContent = "Outfit applied — ready to download!";
   }
 
-  // --- UPLOAD FILE ---
-  document.getElementById("skinFile")?.addEventListener("change", (e) => {
+  // --- FILE UPLOAD ---
+  document.getElementById("skinFile").addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -142,7 +129,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // --- LOAD USERNAME ---
-  document.getElementById("loadUsernameBtn")?.addEventListener("click", () => {
+  document.getElementById("loadUsernameBtn").addEventListener("click", () => {
     const name = document.getElementById("usernameInput").value.trim();
     if (!name) return;
 
@@ -176,7 +163,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // --- DOWNLOAD ---
-  downloadBtn?.addEventListener("click", () => {
+  downloadBtn.addEventListener("click", () => {
     const a = document.createElement("a");
     a.href = canvas.toDataURL("image/png");
     a.download = "probending_skin.png";
