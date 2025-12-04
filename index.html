@@ -19,7 +19,7 @@
   }
   .outfit-btn.active, .toggle-btn.active { background:#008cff; }
 
-  /* OPTIONAL background behind viewer (SAFE — only CSS) */
+  /* OPTIONAL background (does not affect JS functionality) */
   #viewerWrapper {
     position: relative;
     width: 300px;
@@ -156,7 +156,7 @@ function clearOuterLayer() {
     viewer.loadSkin(canvas.toDataURL("image/png"), { model: currentModel });
 
     downloadBtn.disabled = false;
-    getUrlBtn.disabled = false;           // ENABLE GET URL BUTTON
+    getUrlBtn.disabled = false;
     statusText.textContent = "Outfit applied — ready!";
   }
 
@@ -222,15 +222,35 @@ function clearOuterLayer() {
     a.click();
   });
 
-  // --- GET SKIN URL ---
+  // --- GET SKIN URL (Catbox Upload) ---
   getUrlBtn.addEventListener("click", () => {
     const pngData = canvas.toDataURL("image/png");
 
     fetch(pngData)
       .then(res => res.blob())
       .then(blob => {
-        const blobUrl = URL.createObjectURL(blob);
-        skinUrlDisplay.textContent = blobUrl;
+
+        const formData = new FormData();
+        formData.append("reqtype", "fileupload");
+        formData.append("fileToUpload", blob, "skin.png");
+
+        statusText.textContent = "Uploading skin...";
+
+        fetch("https://catbox.moe/user/api.php", {
+          method: "POST",
+          body: formData
+        })
+        .then(res => res.text())
+        .then(url => {
+          skinUrlDisplay.textContent = url;
+          statusText.textContent = "Skin URL ready!";
+        })
+        .catch(err => {
+          skinUrlDisplay.textContent = "Upload failed.";
+          statusText.textContent = "Error uploading skin.";
+          console.error(err);
+        });
+
       });
   });
 
