@@ -7,6 +7,7 @@
 <script src="https://cdn.jsdelivr.net/npm/skinview3d@3.0.0/bundles/skinview3d.bundle.js"></script>
 <script src="https://unpkg.com/skinview3d@3.0.0/dist/skinview3d.bundle.js"></script>
 <script src="https://rawcdn.githack.com/bs-community/skinview3d/3.0.0/bundles/skinview3d.bundle.js"></script>
+
 <style>
   body { font-family: Arial; background:#111; color:white; margin:0; padding:20px; }
   .container { max-width:900px; margin:auto; }
@@ -18,7 +19,6 @@
   .outfit-btn.active, .toggle-btn.active { background:#008cff; }
 </style>
 
-<script src="https://cdn.jsdelivr.net/npm/skinview3d@3.0.0/bundles/skinview3d.bundle.js"></script>
 </head>
 
 <body>
@@ -92,8 +92,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- REMOVE torso / legs / arms (base + outer layer) ---
 function clearOuterLayer() {
   ctx.clearRect(16, 16, 24, 32);       // body
-  ctx.clearRect(40, 18, 16, 14);       // right arm (keep top 2px)
-  ctx.clearRect(32, 50, 16, 14);       // left arm (keep top 2px)
+  ctx.clearRect(40, 18, 16, 14);       // right arm
+  ctx.clearRect(32, 50, 16, 14);       // left arm
   ctx.clearRect(40, 32, 16, 16);       // outer R arm
   ctx.clearRect(48, 48, 16, 16);       // outer L arm
   ctx.clearRect(0, 16, 16, 32);        // legs
@@ -101,18 +101,20 @@ function clearOuterLayer() {
   ctx.clearRect(0, 48, 16, 16);
 }
 
-  // ⭐ --- DEFAULT OUTFIT AUTO-APPLY ---
-  function applyDefaultOutfit() {
+  // ⭐ --- DEFAULT OUTFIT AUTO-APPLY (now async-correct) ---
+  function applyDefaultOutfit(callback) {
     const defaultOutfit = "outfits/red_team.png";
 
     const img = new Image();
     img.onload = () => {
       outfitImg = img;
 
-      // highlight correct button
+      // highlight active button
       outfitButtons.forEach(b => {
         b.classList.toggle("active", b.dataset.outfit === defaultOutfit);
       });
+
+      if (callback) callback(); // ⬅ ensures render happens AFTER outfit loads
     };
     img.src = defaultOutfit;
   }
@@ -145,8 +147,7 @@ function clearOuterLayer() {
       const img = new Image();
       img.onload = () => {
         baseSkinImg = img;
-        applyDefaultOutfit();   // ⭐ AUTO APPLY
-        renderCanvas();
+        applyDefaultOutfit(renderCanvas);   // ⭐ FIXED TIMING
       };
       img.src = ev.target.result;
     };
@@ -162,8 +163,7 @@ function clearOuterLayer() {
     img.crossOrigin = "anonymous";
     img.onload = () => {
       baseSkinImg = img;
-      applyDefaultOutfit();   // ⭐ AUTO APPLY
-      renderCanvas();
+      applyDefaultOutfit(renderCanvas);   // ⭐ FIXED TIMING
     };
     img.src = "https://minotar.net/skin/" + encodeURIComponent(name);
   });
