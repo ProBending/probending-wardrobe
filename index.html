@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <title>Probending Wardrobe</title>
-  <!-- SkinView3D CDN fallback chain -->
+
+<!-- SkinView3D CDN chain (kept as-is to avoid breaking your setup) -->
 <script src="https://cdn.jsdelivr.net/npm/skinview3d@3.0.0/bundles/skinview3d.bundle.js"></script>
 <script src="https://unpkg.com/skinview3d@3.0.0/dist/skinview3d.bundle.js"></script>
 <script src="https://rawcdn.githack.com/bs-community/skinview3d/3.0.0/bundles/skinview3d.bundle.js"></script>
@@ -17,6 +18,17 @@
     padding:10px 15px; margin:5px 0; cursor:pointer; background:#333; border:none; color:white;
   }
   .outfit-btn.active, .toggle-btn.active { background:#008cff; }
+
+  /* OPTIONAL background behind viewer (SAFE — only CSS) */
+  #viewerWrapper {
+    position: relative;
+    width: 300px;
+    height: 380px;
+    background-image: url("backgrounds/arena.png"); /* optional */
+    background-size: cover;
+    background-position: center;
+    border-radius: 6px;
+  }
 </style>
 
 </head>
@@ -50,18 +62,27 @@
   <!-- VIEWER -->
   <div class="row">
     <div class="column">
-      <canvas id="skin3d" width="300" height="380"></canvas>
+      <div id="viewerWrapper">
+        <canvas id="skin3d" width="300" height="380"></canvas>
+      </div>
 
       <!-- REQUIRED HIDDEN CANVAS -->
       <canvas id="skinCanvas" width="64" height="64" style="display:none;"></canvas>
 
       <p id="statusText">Load a skin to begin.</p>
+
+      <!-- Buttons -->
       <button id="downloadBtn" disabled>Download Skin</button>
+      <button id="getUrlBtn" disabled>Get Skin URL</button>
+
+      <!-- Output URL -->
+      <p id="skinUrlDisplay" style="word-break: break-all;"></p>
     </div>
   </div>
 </div>
 
-<!-- FULL WORKING SCRIPT -->
+
+<!-- FULL SCRIPT -->
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   console.log("Probending Wardrobe – Base Outer-Layer Wipe Build Loaded");
@@ -71,6 +92,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const statusText  = document.getElementById("statusText");
   const downloadBtn = document.getElementById("downloadBtn");
+  const getUrlBtn   = document.getElementById("getUrlBtn");
+  const skinUrlDisplay = document.getElementById("skinUrlDisplay");
 
   const outfitButtons = Array.from(document.querySelectorAll(".outfit-btn"));
   const modelButtons  = Array.from(document.querySelectorAll(".toggle-btn"));
@@ -89,19 +112,19 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   viewer.autoRotate = true;
 
-  // --- REMOVE torso / legs / arms (base + outer layer) ---
+  // --- REMOVE torso / legs / arms ---
 function clearOuterLayer() {
-  ctx.clearRect(16, 16, 24, 32);       // body
-  ctx.clearRect(40, 18, 16, 14);       // right arm
-  ctx.clearRect(32, 50, 16, 14);       // left arm
-  ctx.clearRect(40, 32, 16, 16);       // outer R arm
-  ctx.clearRect(48, 48, 16, 16);       // outer L arm
-  ctx.clearRect(0, 16, 16, 32);        // legs
+  ctx.clearRect(16, 16, 24, 32);
+  ctx.clearRect(40, 18, 16, 14);
+  ctx.clearRect(32, 50, 16, 14);
+  ctx.clearRect(40, 32, 16, 16);
+  ctx.clearRect(48, 48, 16, 16);
+  ctx.clearRect(0, 16, 16, 32);
   ctx.clearRect(16, 48, 16, 16);
   ctx.clearRect(0, 48, 16, 16);
 }
 
-  // ⭐ --- DEFAULT OUTFIT AUTO-APPLY (now async-correct) ---
+  // --- DEFAULT OUTFIT AUTO-APPLY ---
   function applyDefaultOutfit(callback) {
     const defaultOutfit = "outfits/red_team.png";
 
@@ -109,12 +132,11 @@ function clearOuterLayer() {
     img.onload = () => {
       outfitImg = img;
 
-      // highlight active button
       outfitButtons.forEach(b => {
         b.classList.toggle("active", b.dataset.outfit === defaultOutfit);
       });
 
-      if (callback) callback(); // ⬅ ensures render happens AFTER outfit loads
+      if (callback) callback();
     };
     img.src = defaultOutfit;
   }
@@ -134,7 +156,8 @@ function clearOuterLayer() {
     viewer.loadSkin(canvas.toDataURL("image/png"), { model: currentModel });
 
     downloadBtn.disabled = false;
-    statusText.textContent = "Outfit applied — ready to download!";
+    getUrlBtn.disabled = false;           // ENABLE GET URL BUTTON
+    statusText.textContent = "Outfit applied — ready!";
   }
 
   // --- FILE UPLOAD ---
@@ -147,7 +170,7 @@ function clearOuterLayer() {
       const img = new Image();
       img.onload = () => {
         baseSkinImg = img;
-        applyDefaultOutfit(renderCanvas);   // ⭐ FIXED TIMING
+        applyDefaultOutfit(renderCanvas);
       };
       img.src = ev.target.result;
     };
@@ -163,7 +186,7 @@ function clearOuterLayer() {
     img.crossOrigin = "anonymous";
     img.onload = () => {
       baseSkinImg = img;
-      applyDefaultOutfit(renderCanvas);   // ⭐ FIXED TIMING
+      applyDefaultOutfit(renderCanvas);
     };
     img.src = "https://minotar.net/skin/" + encodeURIComponent(name) + "?v=" + Date.now();
   });
@@ -197,6 +220,18 @@ function clearOuterLayer() {
     a.href = canvas.toDataURL("image/png");
     a.download = "probending_skin.png";
     a.click();
+  });
+
+  // --- GET SKIN URL ---
+  getUrlBtn.addEventListener("click", () => {
+    const pngData = canvas.toDataURL("image/png");
+
+    fetch(pngData)
+      .then(res => res.blob())
+      .then(blob => {
+        const blobUrl = URL.createObjectURL(blob);
+        skinUrlDisplay.textContent = blobUrl;
+      });
   });
 
 });
